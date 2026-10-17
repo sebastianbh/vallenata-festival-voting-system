@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block titulo %}Ediciones{% endblock %}
+
+{% block banner %}
+<section class="page-banner on-stage" aria-labelledby="page-title">
+  <div class="container">
+    <h1 class="page-banner__title" id="page-title">Ediciones</h1>
+    <p class="page-banner__lead">Cada edición del Festival tiene sus propias categorías y votaciones.</p>
+  </div>
+</section>
+{% endblock %}
+
+{% block migas %}{% include 'parciales/_migas.html' %}{% endblock %}
+
+{% block contenido %}
+<div class="container section">
+  <ul class="row-list">
+    {% for edicion in ediciones %}
+      <li class="row-list__item">
+        <div class="stack stack--tight">
+          <h2 class="row-list__title"><a href="{% url 'elecciones:detalle_edicion' edicion.pk %}">{{ edicion.numero }}.ª edición · {{ edicion.nombre }} {{ edicion.anio }}</a></h2>
+          <div class="row-list__meta">
+            <span class="meta-item">{{ edicion.lugar }}</span>
+            <span class="meta-item">Del {{ edicion.fecha_inicio|date:"j \d\e F"|lower }} al {{ edicion.fecha_fin|date:"j \d\e F \d\e Y"|lower }}</span>
+            <span class="meta-item">{{ edicion.num_categorias }} categoría{{ edicion.num_categorias|pluralize }}</span>
+          </div>
+        </div>
+        <a class="button button--outline row-list__action" href="{% url 'elecciones:detalle_edicion' edicion.pk %}">Ver categorías<span class="visually-hidden">: {{ edicion }}</span></a>
+      </li>
+    {% empty %}
+      <li>
+        <div class="empty-state">
+          <h2>Todavía no hay ediciones publicadas</h2>
+          <p>Cuando la organización las publique, aparecerán aquí.</p>
+        </div>
+      </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

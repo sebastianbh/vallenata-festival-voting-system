@@ -1,0 +1,30 @@
+# Entorno virtual: cada integrante lo crea en su equipo
+venv/
+.venv/
+
+# Variables de entorno con credenciales reales (solo se sube .env.example)
+.env
+# La plantilla sin datos reales sí se sube (el .gitignore de la raíz ignora .env.*)
+!.env.example
+
+# Archivos que genera Python al ejecutarse
+__pycache__/
+*.py[cod]
+
+# Archivos subidos desde el Admin (imágenes de las opciones)
+media/
+
+# Archivos estáticos recopilados con collectstatic
+staticfiles/
+
+# Base de datos SQLite que Django crea si no se configura MySQL
+db.sqlite3
+
+# Archivos temporales de Word mientras un documento está abierto
+~$*
+
+# Editores y sistema operativo
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store

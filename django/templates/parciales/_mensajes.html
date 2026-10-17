@@ -1,0 +1,8 @@
+{# Avisos de un solo uso, por ejemplo "Iniciaste sesión" (framework de mensajes de Django) #}
+{% if messages %}
+  <div class="container" style="padding-top: var(--space-5);" role="status">
+    {% for mensaje in messages %}
+      <div class="notice{% if mensaje.tags == 'success' %} notice--success{% elif mensaje.tags == 'error' %} notice--danger{% elif mensaje.tags == 'warning' %} notice--warning{% endif %}">{{ mensaje }}</div>
+    {% endfor %}
+  </div>
+{% endif %}

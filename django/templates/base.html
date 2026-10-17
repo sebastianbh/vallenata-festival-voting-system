@@ -1,0 +1,44 @@
+{% load static %}<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}Votaciones del público{% endblock %} | Festival de la Leyenda Vallenata</title>
+  <meta name="description" content="{% block descripcion %}Sistema web de votaciones del público para el Festival de la Leyenda Vallenata.{% endblock %}">
+  <meta name="theme-color" content="#000000">
+  <link rel="icon" href="{% static 'img/favicon.svg' %}" type="image/svg+xml">
+  <link rel="icon" href="{% static 'img/favicon-32.png' %}" sizes="32x32" type="image/png">
+  <link rel="icon" href="{% static 'img/favicon-16.png' %}" sizes="16x16" type="image/png">
+  <link rel="apple-touch-icon" href="{% static 'img/apple-touch-icon.png' %}">
+  <link rel="preload" href="{% static 'fonts/raleway-var.woff2' %}" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="{% static 'fonts/poppins-400.woff2' %}" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="{% static 'fonts/poppins-600.woff2' %}" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="{% static 'fonts/poppins-700.woff2' %}" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
+  <link rel="stylesheet" href="{% static 'css/base.css' %}">
+  <link rel="stylesheet" href="{% static 'css/layout.css' %}">
+  <link rel="stylesheet" href="{% static 'css/components.css' %}">
+  <link rel="stylesheet" href="{% static 'css/pages.css' %}">
+  <script src="{% static 'js/menu.js' %}" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Saltar al contenido</a>
+  <aside class="prototype-ribbon" aria-label="Aviso sobre el proyecto">
+    <div class="container"><strong>Proyecto académico en equipo</strong> del curso Desarrollo Web, Areandina. Datos de ejemplo.</div>
+  </aside>
+
+  {% include 'parciales/_encabezado.html' %}
+
+  <main id="main">
+    {% block banner %}{% endblock %}
+
+    {% block migas %}<div class="breadcrumb-band" aria-hidden="true"></div>{% endblock %}
+
+    {% include 'parciales/_mensajes.html' %}
+
+    {% block contenido %}{% endblock %}
+  </main>
+
+  {% include 'parciales/_pie.html' %}
+</body>
+</html>

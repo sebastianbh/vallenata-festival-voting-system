@@ -1,0 +1,13 @@
+{# Un campo de formulario con el estilo del prototipo: etiqueta, campo, ayuda y errores. Recibe "campo". #}
+<div class="field">
+  {% if campo.field.widget.input_type == 'checkbox' %}
+    <label class="check">{{ campo }} <span>{{ campo.label }}</span></label>
+  {% else %}
+    <label class="field__label" for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+    {{ campo }}
+    {% if campo.help_text %}<div class="field__hint">{{ campo.help_text|safe }}</div>{% endif %}
+  {% endif %}
+  {% for error in campo.errors %}
+    <p class="field__error">{{ error }}</p>
+  {% endfor %}
+</div>

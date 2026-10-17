@@ -1,0 +1,8 @@
+{# Una categoría dentro del índice de categorías. Recibe "categoria" (con num_votaciones y num_abiertas). #}
+<li>
+  <a class="category-index__link" href="{% url 'elecciones:detalle_categoria' categoria.pk %}">
+    <span class="category-index__name">{{ categoria.nombre }}</span>
+    <span class="category-index__summary">{{ categoria.descripcion }}</span>
+    <span class="category-index__count">{{ categoria.num_votaciones }} votaci{{ categoria.num_votaciones|pluralize:"ón,ones" }}{% if categoria.num_abiertas %}, {{ categoria.num_abiertas }} abierta{{ categoria.num_abiertas|pluralize }}{% endif %}</span>
+  </a>
+</li>

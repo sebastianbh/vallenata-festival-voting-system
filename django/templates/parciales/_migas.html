@@ -1,0 +1,8 @@
+{# Barra de migas de pan. Recibe "migas": lista de (texto, url); el último elemento es la página actual. #}
+<nav class="breadcrumb-band" aria-label="Ruta de navegación">
+  <ol class="container breadcrumb">
+    {% for texto, url in migas %}
+      <li>{% if url and not forloop.last %}<a href="{{ url }}">{{ texto }}</a>{% else %}<span aria-current="page">{{ texto }}</span>{% endif %}</li>
+    {% endfor %}
+  </ol>
+</nav>

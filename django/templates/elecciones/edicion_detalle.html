@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block titulo %}Categorías de la {{ edicion.numero }}.ª edición{% endblock %}
+
+{% block banner %}
+<section class="page-banner on-stage" aria-labelledby="page-title">
+  <div class="container">
+    <h1 class="page-banner__title" id="page-title">{{ edicion.numero }}.ª edición · {{ edicion.anio }}</h1>
+    <p class="page-banner__lead">{{ edicion.nombre }}. {{ edicion.lugar }}, del {{ edicion.fecha_inicio|date:"j \d\e F"|lower }} al {{ edicion.fecha_fin|date:"j \d\e F \d\e Y"|lower }}.</p>
+  </div>
+</section>
+{% endblock %}
+
+{% block migas %}{% include 'parciales/_migas.html' %}{% endblock %}
+
+{% block contenido %}
+<div class="container section">
+  <h2 class="visually-hidden">Categorías</h2>
+  <ul class="category-index">
+    {% for categoria in categorias %}
+      {% include 'parciales/_fila_categoria.html' %}
+    {% empty %}
+      <li>
+        <div class="empty-state">
+          <h2>Todavía no hay categorías</h2>
+          <p>Cuando la organización las publique, aparecerán aquí.</p>
+        </div>
+      </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

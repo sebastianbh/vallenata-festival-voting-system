@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block titulo %}{{ votacion.titulo }}{% endblock %}
+
+{% block banner %}
+<section class="page-banner on-stage" aria-labelledby="page-title">
+  <div class="container">
+    <h1 class="page-banner__title" id="page-title">{{ votacion.titulo }}</h1>
+    {% if votacion.descripcion %}<p class="page-banner__lead">{{ votacion.descripcion }}</p>{% endif %}
+    <div class="page-banner__meta">
+      {% include 'parciales/_estado.html' %}
+      <span class="meta-item">{{ votacion.categoria.nombre }}</span>
+      <span class="meta-item">{% include 'parciales/_ventana.html' %}</span>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block migas %}{% include 'parciales/_migas.html' %}{% endblock %}
+
+{% block contenido %}
+<div class="container poll-layout poll-layout--split">
+  <section class="stack" aria-labelledby="options-title">
+    <h2 id="options-title">Opciones ({{ opciones|length }})</h2>
+    <ul class="row-list">
+      {% for opcion in opciones %}
+        <li class="row-list__item">
+          <div class="option-summary">
+            {% if opcion.imagen %}
+              <img class="option-thumb" src="{{ opcion.imagen.url }}" alt="Imagen de {{ opcion.nombre }}" width="72" height="72" loading="lazy">
+            {% endif %}
+            <div class="stack stack--tight">
+              <p class="row-list__title">{{ opcion.nombre }}</p>
+              {% if opcion.descripcion %}<p class="field__hint">{{ opcion.descripcion }}</p>{% endif %}
+            </div>
+          </div>
+        </li>
+      {% empty %}
+        <li><p class="field__hint">Esta votación todavía no tiene opciones.</p></li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  <aside class="stack stack--roomy" aria-label="Votar y reglas">
+    {% if votacion.estado == 'abierta' %}
+      {% if user.is_authenticated %}
+        <div class="stack">
+          <button class="button button--block" type="button" disabled>Votar</button>
+          <div class="notice">El registro de votos estará disponible en la siguiente entrega del proyecto.</div>
+        </div>
+      {% else %}
+        <div class="stack">
+          <a class="button button--block" href="{% url 'cuentas:ingresar' %}?next={{ request.path|urlencode }}">Ingresar para votar</a>
+          <a class="button button--outline button--block" href="{% url 'cuentas:registro' %}">Crear cuenta</a>
+        </div>
+      {% endif %}
+    {% elif votacion.estado == 'proxima' %}
+      <button class="button button--block" type="button" disabled>{% include 'parciales/_ventana.html' %}</button>
+    {% else %}
+      <div class="notice">Esta votación ya cerró. Los resultados se publicarán en la siguiente entrega del proyecto.</div>
+    {% endif %}
+
+    <section class="stack" aria-labelledby="rules-title">
+      <h2 id="rules-title">Detalles</h2>
+      <dl class="rule-list">
+        <div class="rule-list__item"><dt>Edición</dt><dd>{{ votacion.categoria.edicion.numero }}.ª ({{ votacion.categoria.edicion.anio }})</dd></div>
+        <div class="rule-list__item"><dt>Categoría</dt><dd>{{ votacion.categoria.nombre }}</dd></div>
+        <div class="rule-list__item"><dt>Apertura</dt><dd>{{ votacion.fecha_apertura|date:"j \d\e F \d\e Y, g:i a"|lower }}</dd></div>
+        <div class="rule-list__item"><dt>Cierre</dt><dd>{{ votacion.fecha_cierre|date:"j \d\e F \d\e Y, g:i a"|lower }}</dd></div>
+        <div class="rule-list__item"><dt>Identificación</dt><dd>Con cuenta</dd></div>
+      </dl>
+    </section>
+  </aside>
+</div>
+{% endblock %}
