@@ -1,0 +1,2 @@
+{# Etiqueta de estado (Próxima / Abierta / Cerrada). Recibe la variable "votacion". #}
+<span class="status {% if votacion.estado == 'abierta' %}status--open{% elif votacion.estado == 'proxima' %}status--upcoming{% else %}status--closed{% endif %}">{{ votacion.get_estado_display }}</span>

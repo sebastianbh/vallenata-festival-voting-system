@@ -1,0 +1,37 @@
+{% load static %}
+{# Menú principal. En el prototipo lo dibujaba JavaScript (chrome.js); aquí lo arma Django. #}
+{% with ruta=request.resolver_match.url_name %}
+<header class="site-header">
+  <div class="container site-header__bar">
+    <a class="brand" href="{% url 'elecciones:inicio' %}">
+      <img class="brand__logo" src="{% static 'img/brand/logo-on-dark.svg' %}" width="371" height="62" alt="Leyenda Vallenata, votaciones del público. Ir al inicio">
+    </a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7h16"></path><path d="M4 12h16"></path><path d="M4 17h16"></path></svg>
+      <span class="visually-hidden">Abrir menú</span>
+    </button>
+    <nav class="site-nav" id="site-nav" aria-label="Principal" data-open="false">
+      <ul class="site-nav__list container">
+        <li><a class="site-nav__link" href="{% url 'elecciones:inicio' %}"{% if ruta == 'inicio' %} aria-current="page"{% endif %}>Inicio</a></li>
+        <li><a class="site-nav__link" href="{% url 'elecciones:lista_ediciones' %}"{% if ruta == 'lista_ediciones' or ruta == 'detalle_edicion' or ruta == 'detalle_categoria' or ruta == 'detalle_votacion' %} aria-current="page"{% endif %}>Ediciones</a></li>
+
+        {% if user.is_authenticated %}
+          {% if user.is_staff %}
+            <li><a class="site-nav__link" href="{% url 'admin:index' %}">Administración</a></li>
+          {% endif %}
+          <li>
+            {# Cerrar sesión se hace con un formulario POST, como recomienda Django #}
+            <form method="post" action="{% url 'cuentas:salir' %}">
+              {% csrf_token %}
+              <button class="site-nav__button" type="submit">Salir ({{ user.first_name|default:user.username }})</button>
+            </form>
+          </li>
+        {% else %}
+          <li><a class="site-nav__link" href="{% url 'cuentas:ingresar' %}"{% if ruta == 'ingresar' %} aria-current="page"{% endif %}>Ingresar</a></li>
+          <li><a class="site-nav__link" href="{% url 'cuentas:registro' %}"{% if ruta == 'registro' %} aria-current="page"{% endif %}>Crear cuenta</a></li>
+        {% endif %}
+      </ul>
+    </nav>
+  </div>
+</header>
+{% endwith %}

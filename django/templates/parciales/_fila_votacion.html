@@ -1,0 +1,15 @@
+{# Una votación dentro de una lista (clase row-list del prototipo). Recibe "votacion". #}
+<li class="row-list__item">
+  <div class="stack stack--tight">
+    <h3 class="row-list__title"><a href="{% url 'elecciones:detalle_votacion' votacion.pk %}">{{ votacion.titulo }}</a></h3>
+    <div class="row-list__meta">
+      {% include 'parciales/_estado.html' %}
+      <span class="meta-item">{{ votacion.categoria.nombre }}</span>
+      <span class="meta-item">{% include 'parciales/_ventana.html' %}</span>
+      <span class="meta-item">{{ votacion.num_opciones }} opcion{{ votacion.num_opciones|pluralize:"es" }}</span>
+    </div>
+  </div>
+  <a class="button {% if votacion.estado != 'abierta' %}button--outline {% endif %}row-list__action" href="{% url 'elecciones:detalle_votacion' votacion.pk %}">
+    {% if votacion.estado == 'abierta' %}Ver opciones{% else %}Ver detalle{% endif %}<span class="visually-hidden">: {{ votacion.titulo }}</span>
+  </a>
+</li>

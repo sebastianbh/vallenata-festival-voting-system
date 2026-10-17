@@ -1,0 +1,2 @@
+{# Resumen de cuándo abre o cierra una votación. Recibe la variable "votacion". #}
+{% if votacion.estado == 'abierta' %}Cierra el {{ votacion.fecha_cierre|date:"j \d\e F, g:i a"|lower }}{% elif votacion.estado == 'proxima' %}Abre el {{ votacion.fecha_apertura|date:"j \d\e F, g:i a"|lower }}{% else %}Cerró el {{ votacion.fecha_cierre|date:"j \d\e F \d\e Y"|lower }}{% endif %}

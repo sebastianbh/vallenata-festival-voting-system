@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block titulo %}{{ categoria.nombre }}{% endblock %}
+
+{% block banner %}
+<section class="page-banner on-stage" aria-labelledby="page-title">
+  <div class="container">
+    <h1 class="page-banner__title" id="page-title">{{ categoria.nombre }}</h1>
+    {% if categoria.descripcion %}<p class="page-banner__lead">{{ categoria.descripcion }}</p>{% endif %}
+  </div>
+</section>
+{% endblock %}
+
+{% block migas %}{% include 'parciales/_migas.html' %}{% endblock %}
+
+{% block contenido %}
+<div class="container section">
+  <h2 class="visually-hidden">Votaciones de la categoría</h2>
+  <ul class="row-list">
+    {% for votacion in votaciones %}
+      {% include 'parciales/_fila_votacion.html' %}
+    {% empty %}
+      <li>
+        <div class="empty-state">
+          <h2>Esta categoría todavía no tiene votaciones</h2>
+          <p>Cuando la organización las publique, aparecerán aquí.</p>
+          <a class="button button--outline" href="{% url 'elecciones:detalle_edicion' categoria.edicion.pk %}">Ver otras categorías</a>
+        </div>
+      </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}
