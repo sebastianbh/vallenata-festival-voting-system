@@ -20,6 +20,11 @@ class Edicion(models.Model):
     fecha_inicio = models.DateField('fecha de inicio')
     fecha_fin = models.DateField('fecha de fin')
     activa = models.BooleanField(default=True, help_text='Las ediciones inactivas no se muestran en el sitio.')
+    en_portada = models.BooleanField(
+        'mostrar en portada', default=False,
+        help_text='La edición que se muestra en el banner del inicio. Solo puede haber una; '
+                  'si ninguna está marcada, se muestra la más reciente.',
+    )
 
     class Meta:
         verbose_name = 'edición'
@@ -32,6 +37,18 @@ class Edicion(models.Model):
     def clean(self):
         if self.fecha_inicio and self.fecha_fin and self.fecha_fin < self.fecha_inicio:
             raise ValidationError({'fecha_fin': 'La fecha de fin no puede ser anterior a la de inicio.'})
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Al marcar esta edición para la portada, se desmarcan las demás
+        if self.en_portada:
+            Edicion.objects.exclude(pk=self.pk).filter(en_portada=True).update(en_portada=False)
+
+    @classmethod
+    def de_portada(cls):
+        """La edición activa marcada para la portada; si no hay ninguna, la más reciente."""
+        activas = cls.objects.filter(activa=True)
+        return activas.filter(en_portada=True).first() or activas.first()
 
 
 class Categoria(models.Model):
