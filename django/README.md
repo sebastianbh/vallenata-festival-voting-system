@@ -51,7 +51,16 @@ django/
 
 Requisitos previos: **Python 3.13** (marcando *Add python.exe to PATH* al instalar), **XAMPP** y **Git**.
 
-Todos los comandos se ejecutan en PowerShell, dentro de la carpeta `django/`.
+### 0. Clonar el repositorio
+
+```powershell
+git clone https://github.com/sebastianbh/vallenata-festival-voting-system.git votaciones-festival
+cd votaciones-festival
+```
+
+Repositorio: https://github.com/sebastianbh/vallenata-festival-voting-system
+
+A partir de aquí, todos los comandos se ejecutan en PowerShell, dentro de la carpeta `django/`.
 
 ### 1. Entorno virtual y dependencias
 

@@ -31,6 +31,7 @@ Todo el equipo usa **XAMPP**, que trae **MariaDB 10.4** (XAMPP lo llama "MySQL")
 
 ### ¿Dónde está cada cosa en el repositorio?
 
+- El repositorio del equipo es https://github.com/sebastianbh/vallenata-festival-voting-system. Se creó a partir del repositorio de la Entrega 1 (`jsanchez542-hub/vallenata-festival-voting-system`), con todo su historial.
 - La **raíz del repositorio** es el prototipo HTML de la Entrega 1 (el que se ve en GitHub Pages).
 - La carpeta **`django/`** es el proyecto real: el mismo diseño, ahora con Python y base de datos.
 
@@ -263,7 +264,7 @@ Cada flecha significa "una edición tiene muchas categorías", "una categoría t
 
 | Modelo | Campos |
 |---|---|
-| **Edicion** | número, año, nombre, lugar, fecha de inicio, fecha de fin, activa |
+| **Edicion** | número, año, nombre, lugar, fecha de inicio, fecha de fin, activa, mostrar en portada |
 | **Categoria** | edición, nombre, descripción, activa |
 | **Votacion** | categoría, título, descripción, fecha de apertura, fecha de cierre, publicada |
 | **Opcion** | votación, nombre, descripción, imagen (opcional), orden |
@@ -293,6 +294,8 @@ python manage.py migrate
 - `migrate` ejecuta las migraciones pendientes y crea las tablas en MySQL.
 
 Además de las 4 tablas del proyecto (`elecciones_edicion`, `elecciones_categoria`, `elecciones_votacion` y `elecciones_opcion`), Django crea las suyas: usuarios (`auth_user`), permisos, sesiones (`django_session`), el historial del panel y `django_migrations`, donde anota qué migraciones ya se aplicaron.
+
+**Ejemplo de un cambio posterior.** Más adelante se agregó a `Edicion` el campo **"mostrar en portada"**, para que la administración elija qué edición sale en el banner del inicio. Al guardar una edición marcada, las demás se desmarcan solas, y si ninguna está marcada se muestra la más reciente. Como se cambió el modelo, se creó una segunda migración (`0002_edicion_en_portada.py`), que solo agrega esa columna a la tabla.
 
 > **Regla de oro:** cada vez que se cambia un modelo, se ejecuta `makemigrations` y luego `migrate`. Los archivos de migración **sí se suben a GitHub**, para que los compañeros solo tengan que ejecutar `migrate`.
 

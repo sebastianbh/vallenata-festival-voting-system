@@ -29,9 +29,9 @@ class OpcionInline(admin.TabularInline):
 
 @admin.register(Edicion)
 class EdicionAdmin(admin.ModelAdmin):
-    list_display = ['numero', 'anio', 'nombre', 'lugar', 'fecha_inicio', 'fecha_fin', 'activa']
+    list_display = ['numero', 'anio', 'nombre', 'lugar', 'fecha_inicio', 'fecha_fin', 'activa', 'en_portada']
     list_display_links = ['numero', 'anio']
-    list_filter = ['activa']
+    list_filter = ['activa', 'en_portada']
     search_fields = ['nombre', 'lugar']
     inlines = [CategoriaInline]
 
@@ -56,7 +56,7 @@ class VotacionAdmin(admin.ModelAdmin):
     list_display = ['titulo', 'categoria', 'edicion', 'fecha_apertura', 'fecha_cierre', 'estado', 'publicada']
     list_filter = ['publicada', 'categoria__edicion', 'categoria']
     search_fields = ['titulo', 'descripcion']
-    date_hierarchy = 'fecha_apertura'
+    # Sin date_hierarchy: necesita las tablas de zonas horarias de MySQL, que XAMPP no trae instaladas
     list_select_related = ['categoria__edicion']
     inlines = [OpcionInline]
 

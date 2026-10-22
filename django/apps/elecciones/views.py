@@ -49,8 +49,8 @@ def categorias_con_conteos(edicion):
 
 def inicio(request):
     ahora = timezone.now()
-    # La edición más reciente que esté activa (el modelo ordena por año descendente)
-    edicion = Edicion.objects.filter(activa=True).first()
+    # La edición que la administración marcó para la portada (o la más reciente)
+    edicion = Edicion.de_portada()
     abiertas = votaciones_visibles().filter(fecha_apertura__lte=ahora, fecha_cierre__gt=ahora)
     contexto = {
         'edicion': edicion,
