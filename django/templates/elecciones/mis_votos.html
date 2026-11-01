@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block titulo %}Mis votos{% endblock %}
+
+{% block banner %}
+<section class="page-banner on-stage" aria-labelledby="page-title">
+  <div class="container">
+    <h1 class="page-banner__title" id="page-title">Mis votos</h1>
+    <p class="page-banner__lead">Las categorías en las que ya participaste.</p>
+  </div>
+</section>
+{% endblock %}
+
+{% block migas %}{% include 'parciales/_migas.html' %}{% endblock %}
+
+{% block contenido %}
+<div class="container poll-layout">
+  <ul class="row-list">
+    {% for voto in votos %}
+      <li class="row-list__item">
+        <div class="stack stack--tight">
+          <h2 class="row-list__title">{{ voto.categoria.nombre }}</h2>
+          <p>Votaste por <strong>{{ voto.opcion.nombre }}</strong></p>
+          <div class="row-list__meta">
+            <span class="meta-item">{{ voto.opcion.votacion.titulo }}</span>
+            <span class="meta-item">{{ voto.edicion.numero }}.ª edición ({{ voto.edicion.anio }})</span>
+            <span class="meta-item">{{ voto.fecha|date:"j \d\e F \d\e Y, g:i a"|lower }}</span>
+          </div>
+        </div>
+      </li>
+    {% empty %}
+      <li class="stack">
+        <p class="field__hint">Todavía no has votado en ninguna categoría.</p>
+        <a class="button" href="{% url 'elecciones:inicio' %}">Ver votaciones abiertas</a>
+      </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

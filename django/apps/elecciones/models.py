@@ -3,8 +3,10 @@ Modelos del dominio del Festival.
 
 Jerarquía: Edicion → Categoria → Votacion → Opcion.
 Cada nivel pertenece al anterior mediante una llave foránea (ForeignKey).
+Voto une a un usuario con la opción que eligió.
 """
 
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
@@ -132,3 +134,42 @@ class Opcion(models.Model):
 
     def __str__(self):
         return self.nombre
+
+
+class Voto(models.Model):
+    """El voto de un usuario: una sola opción por categoría y edición."""
+
+    # PROTECT: un voto emitido no desaparece si alguien borra al usuario o la opción
+    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='votos')
+    edicion = models.ForeignKey(Edicion, on_delete=models.PROTECT, related_name='votos', verbose_name='edición')
+    categoria = models.ForeignKey(Categoria, on_delete=models.PROTECT, related_name='votos', verbose_name='categoría')
+    opcion = models.ForeignKey(Opcion, on_delete=models.PROTECT, related_name='votos', verbose_name='opción')
+    fecha = models.DateTimeField('fecha del voto', auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'voto'
+        verbose_name_plural = 'votos'
+        ordering = ['-fecha']
+        constraints = [
+            # La regla central: MySQL rechaza el duplicado aunque lleguen dos solicitudes a la vez
+            models.UniqueConstraint(fields=['usuario', 'edicion', 'categoria'], name='un_voto_por_usuario_categoria_edicion'),
+        ]
+
+    def __str__(self):
+        return f'{self.usuario} en {self.categoria}'
+
+    @classmethod
+    def de_usuario(cls, usuario, categoria):
+        """El voto del usuario en esa categoría y edición, o None si todavía no ha votado."""
+        return (
+            cls.objects
+            .filter(usuario=usuario, edicion=categoria.edicion_id, categoria=categoria)
+            .select_related('opcion__votacion')
+            .first()
+        )
+
+    @classmethod
+    def registrar(cls, usuario, opcion):
+        """Guarda el voto. La categoría y la edición salen de la opción, así siempre coinciden."""
+        categoria = opcion.votacion.categoria
+        return cls.objects.create(usuario=usuario, edicion=categoria.edicion, categoria=categoria, opcion=opcion)

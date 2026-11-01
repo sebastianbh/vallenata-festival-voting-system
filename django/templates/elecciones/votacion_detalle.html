@@ -20,35 +20,63 @@
 
 {% block contenido %}
 <div class="container poll-layout poll-layout--split">
-  <section class="stack" aria-labelledby="options-title">
-    <h2 id="options-title">Opciones ({{ opciones|length }})</h2>
-    <ul class="row-list">
-      {% for opcion in opciones %}
-        <li class="row-list__item">
-          <div class="option-summary">
-            {% if opcion.imagen %}
-              <img class="option-thumb" src="{{ opcion.imagen.url }}" alt="Imagen de {{ opcion.nombre }}" width="72" height="72" loading="lazy">
-            {% endif %}
-            <div class="stack stack--tight">
-              <p class="row-list__title">{{ opcion.nombre }}</p>
-              {% if opcion.descripcion %}<p class="field__hint">{{ opcion.descripcion }}</p>{% endif %}
+  {% if puede_votar and opciones %}
+    <form class="stack" method="post" action="{% url 'elecciones:votar' votacion.pk %}">
+      {% csrf_token %}
+      <fieldset class="stack">
+        <legend class="legend-title">Elige una opción</legend>
+        <div class="choice-list">
+          {% for opcion in opciones %}
+            <label class="choice">
+              <input class="choice__input" type="radio" name="opcion" value="{{ opcion.pk }}" required>
+              <span class="choice__body">
+                {% if opcion.imagen %}
+                  <img class="option-thumb" src="{{ opcion.imagen.url }}" alt="" width="72" height="72" loading="lazy">
+                {% endif %}
+                <span class="choice__text">
+                  <span class="choice__name">{{ opcion.nombre }}</span>
+                  {% if opcion.descripcion %}<span class="choice__description">{{ opcion.descripcion }}</span>{% endif %}
+                </span>
+                <span class="choice__mark" aria-hidden="true"></span>
+              </span>
+            </label>
+          {% endfor %}
+        </div>
+      </fieldset>
+      <button class="button" type="submit">Continuar a la confirmación</button>
+    </form>
+  {% else %}
+    <section class="stack" aria-labelledby="options-title">
+      <h2 id="options-title">Opciones ({{ opciones|length }})</h2>
+      <ul class="row-list">
+        {% for opcion in opciones %}
+          <li class="row-list__item">
+            <div class="option-summary">
+              {% if opcion.imagen %}
+                <img class="option-thumb" src="{{ opcion.imagen.url }}" alt="Imagen de {{ opcion.nombre }}" width="72" height="72" loading="lazy">
+              {% endif %}
+              <div class="stack stack--tight">
+                <p class="row-list__title">{{ opcion.nombre }}</p>
+                {% if opcion.descripcion %}<p class="field__hint">{{ opcion.descripcion }}</p>{% endif %}
+              </div>
             </div>
-          </div>
-        </li>
-      {% empty %}
-        <li><p class="field__hint">Esta votación todavía no tiene opciones.</p></li>
-      {% endfor %}
-    </ul>
-  </section>
+          </li>
+        {% empty %}
+          <li><p class="field__hint">Esta votación todavía no tiene opciones.</p></li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
 
   <aside class="stack stack--roomy" aria-label="Votar y reglas">
-    {% if votacion.estado == 'abierta' %}
-      {% if user.is_authenticated %}
-        <div class="stack">
-          <button class="button button--block" type="button" disabled>Votar</button>
-          <div class="notice">El registro de votos estará disponible en la siguiente entrega del proyecto.</div>
-        </div>
-      {% else %}
+    {% if voto %}
+      <div class="notice notice--success">
+        Ya votaste en esta categoría por <strong>{{ voto.opcion.nombre }}</strong> ({{ voto.opcion.votacion.titulo }}).
+        Solo se permite un voto por categoría y edición.
+      </div>
+      <a class="button button--outline button--block" href="{% url 'elecciones:mis_votos' %}">Ver mis votos</a>
+    {% elif votacion.estado == 'abierta' %}
+      {% if not user.is_authenticated %}
         <div class="stack">
           <a class="button button--block" href="{% url 'cuentas:ingresar' %}?next={{ request.path|urlencode }}">Ingresar para votar</a>
           <a class="button button--outline button--block" href="{% url 'cuentas:registro' %}">Crear cuenta</a>
@@ -57,7 +85,7 @@
     {% elif votacion.estado == 'proxima' %}
       <button class="button button--block" type="button" disabled>{% include 'parciales/_ventana.html' %}</button>
     {% else %}
-      <div class="notice">Esta votación ya cerró. Los resultados se publicarán en la siguiente entrega del proyecto.</div>
+      <div class="notice">Esta votación ya cerró y no recibe más votos.</div>
     {% endif %}
 
     <section class="stack" aria-labelledby="rules-title">
@@ -68,6 +96,7 @@
         <div class="rule-list__item"><dt>Apertura</dt><dd>{{ votacion.fecha_apertura|date:"j \d\e F \d\e Y, g:i a"|lower }}</dd></div>
         <div class="rule-list__item"><dt>Cierre</dt><dd>{{ votacion.fecha_cierre|date:"j \d\e F \d\e Y, g:i a"|lower }}</dd></div>
         <div class="rule-list__item"><dt>Identificación</dt><dd>Con cuenta</dd></div>
+        <div class="rule-list__item"><dt>Votos permitidos</dt><dd>Uno por categoría</dd></div>
       </dl>
     </section>
   </aside>

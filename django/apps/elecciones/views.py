@@ -5,12 +5,16 @@ Solo se muestra lo que la administración dejó visible:
 ediciones y categorías activas, y votaciones publicadas.
 """
 
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.db import IntegrityError, transaction
 from django.db.models import Count, Q
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 
-from .models import Categoria, Edicion, Votacion
+from .forms import VotoForm
+from .models import Categoria, Edicion, Votacion, Voto
 
 
 def migas_hasta(*pasos):
@@ -93,9 +97,63 @@ def detalle_categoria(request, pk):
 def detalle_votacion(request, pk):
     votacion = get_object_or_404(votaciones_visibles(), pk=pk)
     categoria = votacion.categoria
+    voto = Voto.de_usuario(request.user, categoria) if request.user.is_authenticated else None
     contexto = {
         'votacion': votacion,
         'opciones': votacion.opciones.all(),
+        'voto': voto,
+        'puede_votar': request.user.is_authenticated and votacion.estado == Votacion.ABIERTA and not voto,
         'migas': migas_hasta(miga_edicion(categoria.edicion), miga_categoria(categoria), (votacion.titulo, None)),
     }
     return render(request, 'elecciones/votacion_detalle.html', contexto)
+
+
+@login_required
+def votar(request, pk):
+    """Recibe la opción elegida, pide confirmarla y, una vez confirmada, guarda el voto."""
+    votacion = get_object_or_404(votaciones_visibles(), pk=pk)
+    # Se llega aquí sin POST cuando alguien inicia sesión después de intentar votar
+    if request.method != 'POST':
+        return redirect('elecciones:detalle_votacion', pk=pk)
+
+    form = VotoForm(request.POST, votacion=votacion, usuario=request.user)
+    if not form.is_valid():
+        for errores in form.errors.values():
+            for error in errores:
+                messages.error(request, error)
+        return redirect('elecciones:detalle_votacion', pk=pk)
+
+    opcion = form.cleaned_data['opcion']
+    if 'confirmado' not in request.POST:
+        categoria = votacion.categoria
+        contexto = {
+            'votacion': votacion,
+            'opcion': opcion,
+            'migas': migas_hasta(
+                miga_edicion(categoria.edicion), miga_categoria(categoria),
+                (votacion.titulo, reverse('elecciones:detalle_votacion', args=[pk])), ('Confirmar voto', None),
+            ),
+        }
+        return render(request, 'elecciones/voto_confirmar.html', contexto)
+
+    # Dos solicitudes simultáneas pueden pasar juntas la validación del formulario.
+    # En ese caso MySQL guarda solo una y a la otra le responde con un IntegrityError.
+    try:
+        with transaction.atomic():
+            Voto.registrar(request.user, opcion)
+    except IntegrityError:
+        messages.error(request, 'Ya votaste en esta categoría: solo se permite un voto por categoría y edición.')
+        return redirect('elecciones:detalle_votacion', pk=pk)
+
+    messages.success(request, f'Tu voto por {opcion.nombre} quedó registrado.')
+    return redirect('elecciones:mis_votos')
+
+
+@login_required
+def mis_votos(request):
+    votos = request.user.votos.select_related('edicion', 'categoria', 'opcion__votacion')
+    contexto = {
+        'votos': votos,
+        'migas': [('Inicio', reverse('elecciones:inicio')), ('Mis votos', None)],
+    }
+    return render(request, 'elecciones/mis_votos.html', contexto)

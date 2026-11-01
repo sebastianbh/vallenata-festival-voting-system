@@ -65,9 +65,16 @@ EDICIONES = [
                     {
                         'titulo': 'Vestuario más destacado',
                         'descripcion': 'Escoge el vestuario que más te llamó la atención en el Desfile de Piloneras.',
-                        'apertura': lambda: a_las(4, 8), 'cierre': lambda: a_las(12, 20), 'publicada': True,
+                        'apertura': lambda: a_las(-1, 8), 'cierre': lambda: a_las(12, 20), 'publicada': True,
                         'opciones': [('Vestuario A', 'Piloneras mayores'), ('Vestuario B', 'Piloneras juveniles'),
                                      ('Vestuario C', 'Piloneras infantiles')],
+                    },
+                    {
+                        'titulo': 'Grupo de piloneras favorito',
+                        'descripcion': 'Escoge el grupo de baile que más disfrutaste en el Desfile de Piloneras.',
+                        'apertura': lambda: a_las(4, 8), 'cierre': lambda: a_las(12, 20), 'publicada': True,
+                        'opciones': [('Grupo A', 'Piloneras mayores'), ('Grupo B', 'Piloneras juveniles'),
+                                     ('Grupo C', 'Piloneras infantiles')],
                     },
                 ],
             },
