@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block titulo %}Confirmar voto{% endblock %}
+
+{% block banner %}
+<section class="page-banner on-stage" aria-labelledby="page-title">
+  <div class="container">
+    <h1 class="page-banner__title" id="page-title">Confirma tu voto</h1>
+    <p class="page-banner__lead">{{ votacion.titulo }}</p>
+  </div>
+</section>
+{% endblock %}
+
+{% block migas %}{% include 'parciales/_migas.html' %}{% endblock %}
+
+{% block contenido %}
+<div class="container container--narrow poll-layout">
+  <section class="confirm-panel stack" aria-labelledby="confirm-title">
+    <h2 id="confirm-title" class="field__label">Vas a votar por</h2>
+    <p class="confirm-panel__choice">{{ opcion.nombre }}</p>
+    {% if opcion.descripcion %}<p class="field__hint">{{ opcion.descripcion }}</p>{% endif %}
+  </section>
+
+  <div class="notice notice--warning">
+    <strong>Un voto confirmado no se puede cambiar.</strong>
+    Después no podrás votar otra vez en la categoría {{ votacion.categoria.nombre }} de esta edición.
+  </div>
+
+  <form class="form-actions" method="post" action="{% url 'elecciones:votar' votacion.pk %}">
+    {% csrf_token %}
+    <input type="hidden" name="opcion" value="{{ opcion.pk }}">
+    <input type="hidden" name="confirmado" value="1">
+    <button class="button" type="submit">Confirmar voto</button>
+    <a class="button button--outline" href="{% url 'elecciones:detalle_votacion' votacion.pk %}">Cambiar opción</a>
+  </form>
+</div>
+{% endblock %}

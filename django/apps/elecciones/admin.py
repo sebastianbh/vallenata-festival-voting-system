@@ -3,7 +3,7 @@
 from django.contrib import admin
 from django.db.models import Count
 
-from .models import Categoria, Edicion, Opcion, Votacion
+from .models import Categoria, Edicion, Opcion, Votacion, Voto
 
 # Textos del encabezado del panel
 admin.site.site_header = 'Administración · Votaciones Festival Vallenata'
@@ -75,3 +75,22 @@ class OpcionAdmin(admin.ModelAdmin):
     list_filter = ['votacion__categoria__edicion', 'votacion']
     search_fields = ['nombre', 'descripcion']
     list_select_related = ['votacion']
+
+
+@admin.register(Voto)
+class VotoAdmin(admin.ModelAdmin):
+    """Los votos solo se consultan: nadie puede crearlos, cambiarlos ni borrarlos desde el panel."""
+
+    list_display = ['fecha', 'usuario', 'edicion', 'categoria', 'opcion']
+    list_filter = ['edicion', 'categoria']
+    search_fields = ['usuario__username', 'opcion__nombre']
+    list_select_related = ['usuario', 'edicion', 'categoria', 'opcion']
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False

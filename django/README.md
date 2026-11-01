@@ -1,18 +1,30 @@
 # Sistema Web de Votaciones – Festival de la Leyenda Vallenata 2027
 
-Proyecto académico en equipo del curso **Desarrollo Web** (Fundación Universitaria del Área Andina), **Entrega 2**: desarrollo inicial con **Python, Django (patrón MVT) y MySQL**.
+Proyecto académico en equipo del curso **Desarrollo Web** (Fundación Universitaria del Área Andina), **Entrega 3**: módulo de votaciones con **Python, Django (patrón MVT) y MySQL**, con validaciones en el servidor y una API GET de consulta.
 
 El diseño reutiliza el prototipo HTML/CSS de la Entrega 1, que está en la raíz de este repositorio y se publica con GitHub Pages.
 
-## Qué incluye esta entrega
+## Qué incluye
 
-- **Modelos relacionados**: Edición → Categoría → Votación → Opción, administrables desde Django Admin.
+- **Modelos relacionados**: Edición → Categoría → Votación → Opción, y Voto (usuario, edición, categoría y opción), administrables desde Django Admin.
 - **Autenticación** con el sistema estándar de Django: registro, inicio y cierre de sesión.
 - **Interfaz pública** con datos reales de MySQL: inicio, ediciones, categorías de una edición, votaciones de una categoría y detalle de una votación con sus opciones.
+- **Registro de votos**: elegir una opción, confirmar y guardar en MySQL, con formularios POST y protección CSRF.
+- **Regla central**: un usuario puede elegir una sola opción por categoría y edición. Puede votar en otras categorías.
+- **Mis votos**: cada usuario consulta las categorías en las que participó. El panel de administración consulta todos los votos, sin poder modificarlos.
+- **API GET** `/api/categorias/`: categorías con sus votaciones y opciones en JSON.
 - **Datos de prueba** ficticios que se cargan con un comando.
-- **Pruebas automáticas** de modelos, vistas y cuentas.
+- **Pruebas automáticas** de modelos, vistas, cuentas, votos, concurrencia y API.
 
-El registro de votos y sus reglas corresponden a la siguiente entrega.
+## Dónde está cada regla
+
+| Qué | Archivo |
+|---|---|
+| API GET | `apps/elecciones/api.py` (ruta en `apps/elecciones/urls.py`) |
+| Restricción de unicidad en MySQL | `apps/elecciones/models.py`, modelo `Voto`, y `apps/elecciones/migrations/0003_voto.py` |
+| Validaciones (opción válida, votación abierta, sin voto previo) | `apps/elecciones/forms.py` |
+| Flujo de voto y manejo del error de integridad | `apps/elecciones/views.py`, vista `votar` |
+| Pruebas CP-01 a CP-10 | `apps/elecciones/tests.py` |
 
 ## Tecnologías
 
@@ -44,7 +56,7 @@ django/
 │   └── cuentas/          registro, inicio y cierre de sesión
 ├── templates/            base.html, parciales y una carpeta por app
 ├── static/               CSS, fuentes e imágenes del prototipo
-└── docs/                 guías del equipo
+└── docs/                 guía del equipo
 ```
 
 ## Instalación
@@ -101,7 +113,7 @@ python manage.py createsuperuser
 ```
 
 - `migrate` crea las tablas.
-- `cargar_datos_prueba` carga 2 ediciones, 4 categorías, 6 votaciones (abiertas, próximas, cerradas y un borrador) y sus opciones. Todos los datos son ficticios. Se puede ejecutar de nuevo para refrescar las fechas sin duplicar registros.
+- `cargar_datos_prueba` carga 2 ediciones, 4 categorías, 7 votaciones (abiertas, próximas, cerradas y un borrador) y sus opciones. Todos los datos son ficticios. Se puede ejecutar de nuevo para refrescar las fechas sin duplicar registros.
 - `createsuperuser` pide usuario, correo y contraseña para entrar al panel de administración.
 
 ## Ejecución
@@ -116,6 +128,10 @@ python manage.py runserver
 | http://127.0.0.1:8000/admin | Panel de administración |
 | http://127.0.0.1:8000/cuentas/registro/ | Crear cuenta |
 | http://127.0.0.1:8000/cuentas/ingresar/ | Ingresar |
+| http://127.0.0.1:8000/mis-votos/ | Votos del usuario que inició sesión |
+| http://127.0.0.1:8000/api/categorias/ | API GET con categorías y opciones en JSON |
+
+> La API corre en el computador de quien ejecuta el proyecto: la dirección `127.0.0.1` solo funciona allí.
 
 ## Pruebas
 
@@ -127,8 +143,7 @@ Django crea una base de datos temporal para las pruebas y la borra al terminar.
 
 ## Documentación del equipo
 
-- `docs/Guia-entorno-desarrollo.docx`: guía paso a paso para preparar el entorno en Windows.
-- `docs/guia-paso-a-paso.md`: bitácora de cómo se construyó el proyecto, con los comandos explicados.
+`docs/guia-paso-a-paso.md` es la guía única del equipo: preparar el entorno en Windows, el trabajo del día a día, cómo se construyó el proyecto, los casos CP-01 a CP-10 de la Entrega 3 y los problemas comunes.
 
 ## Seguridad
 

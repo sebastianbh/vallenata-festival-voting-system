@@ -16,6 +16,7 @@
         <li><a class="site-nav__link" href="{% url 'elecciones:lista_ediciones' %}"{% if ruta == 'lista_ediciones' or ruta == 'detalle_edicion' or ruta == 'detalle_categoria' or ruta == 'detalle_votacion' %} aria-current="page"{% endif %}>Ediciones</a></li>
 
         {% if user.is_authenticated %}
+          <li><a class="site-nav__link" href="{% url 'elecciones:mis_votos' %}"{% if ruta == 'mis_votos' %} aria-current="page"{% endif %}>Mis votos</a></li>
           {% if user.is_staff %}
             <li><a class="site-nav__link" href="{% url 'admin:index' %}">Administración</a></li>
           {% endif %}

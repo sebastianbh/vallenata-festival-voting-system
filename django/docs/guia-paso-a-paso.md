@@ -1,6 +1,14 @@
-# Guía paso a paso del proyecto Django
+# Guía del proyecto Django
 
-Bitácora de cómo se construyó el proyecto **Sistema Web de Votaciones – Festival de la Leyenda Vallenata 2027**, explicada de forma sencilla. Cada paso dice qué se hizo, para qué sirve y qué comandos se usaron.
+Guía única del equipo para el **Sistema Web de Votaciones – Festival de la Leyenda Vallenata 2027**. Se actualiza en cada entrega: no hay otra versión en Word ni en otro archivo.
+
+| Si necesitas… | Ve a |
+|---|---|
+| Dejar listo tu computador por primera vez | Parte 1 |
+| Trabajar en el día a día o traer los cambios del equipo | Parte 2 |
+| Entender cómo se construyó el proyecto | Parte 3 |
+| Revisar la Entrega 3, grabar el video y llenar el PDF | Parte 4 |
+| Resolver un error | Problemas comunes |
 
 ---
 
@@ -37,6 +45,210 @@ Todo el equipo usa **XAMPP**, que trae **MariaDB 10.4** (XAMPP lo llama "MySQL")
 
 ---
 
+# Parte 1. Preparar tu computador
+
+Todo se hace en Windows, con la terminal de VS Code. Sigue los pasos en orden.
+
+| Programa | Para qué | Dónde se consigue |
+|---|---|---|
+| Python 3.13 | El lenguaje del proyecto | python.org/downloads/windows |
+| XAMPP | Solo para usar su MySQL (MariaDB) | apachefriends.org |
+| Git | Descargar el proyecto y subir cambios | git-scm.com |
+| VS Code | Editor de código | code.visualstudio.com |
+
+Django no se instala a mano: se instala en el paso 1.4 con un comando. El Apache de XAMPP tampoco se usa, porque Django trae su propio servidor.
+
+## 1.1 Instalar Python
+
+1. Descarga **Python 3.13** (64 bits) desde https://www.python.org/downloads/windows/.
+2. En la primera pantalla del instalador, **marca la casilla "Add python.exe to PATH"**. Es lo más importante de todo el proceso.
+3. Haz clic en *Install Now*.
+4. Cierra VS Code por completo y vuelve a abrirlo. La terminal solo reconoce a Python después de reiniciarla.
+5. Abre una terminal (*Terminal → Nueva terminal*) y comprueba:
+
+```powershell
+python --version
+```
+
+Debe responder algo como `Python 3.13.x`.
+
+## 1.2 Descargar el proyecto
+
+Usa https://github.com/sebastianbh/vallenata-festival-voting-system y no el repositorio de la Entrega 1 (`jsanchez542-hub`), que solo tiene el prototipo HTML.
+
+**Si no lo tienes en tu computador**, abre la terminal en la carpeta de tus trabajos y ejecuta:
+
+```powershell
+git clone https://github.com/sebastianbh/vallenata-festival-voting-system.git votaciones-festival
+cd votaciones-festival
+```
+
+**Si ya lo habías clonado**, no lo clones de nuevo. Trae lo último:
+
+```powershell
+git checkout main
+git pull
+```
+
+Luego abre la carpeta en VS Code (*Archivo → Abrir carpeta*). Debe existir la carpeta `django/`, con `manage.py` y `requirements.txt` adentro. **Todos los comandos de aquí en adelante se ejecutan dentro de `django/`.**
+
+Para descargar no hace falta permiso, porque el repositorio es público. Para subir cambios, pídele al dueño (`sebastianbh`) que te invite desde *Settings → Collaborators* y acepta la invitación que te llega por correo.
+
+## 1.3 Crear y activar el entorno virtual
+
+El entorno virtual es una carpeta llamada `venv` donde quedan Django y las demás librerías de este proyecto. No se sube a GitHub: cada integrante crea la suya.
+
+```powershell
+cd django
+python -m venv venv
+venv\Scripts\activate
+```
+
+Cuando está activo, la línea de la terminal empieza con **`(venv)`**. En cada terminal nueva hay que activarlo otra vez. Para salir se escribe `deactivate`.
+
+> **Si sale "la ejecución de scripts está deshabilitada"**, ejecuta una sola vez este comando y vuelve a activar:
+> ```powershell
+> Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+> ```
+
+## 1.4 Instalar Django y las librerías
+
+```powershell
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+Esto instala exactamente las mismas versiones que usa el resto del equipo.
+
+## 1.5 Crear la base de datos
+
+1. En el panel de XAMPP, presiona **Start** en MySQL. Debe quedar en verde, con el puerto 3306. Apache no hace falta.
+2. Entra a http://localhost/phpmyadmin, pestaña **SQL**, pega esto y presiona *Continuar*:
+
+```sql
+CREATE DATABASE votaciones_festival CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+`utf8mb4` permite guardar tildes, eñes y cualquier otro carácter sin que se dañen. La base queda vacía: Django crea las tablas en el paso 1.7.
+
+## 1.6 Crear tu archivo `.env`
+
+Igual que en Laravel, la clave secreta y los datos de conexión van en un archivo `.env` que **nunca se sube a GitHub**.
+
+```powershell
+copy .env.example .env
+python -c "import secrets; print(secrets.token_urlsafe(50))"
+```
+
+El segundo comando imprime una clave. Abre `.env` y pégala en la línea `SECRET_KEY=`. El archivo queda así, con tu clave:
+
+```
+SECRET_KEY=aqui-va-la-clave-larga-que-generaste
+DEBUG=True
+DB_NAME=votaciones_festival
+DB_USER=root
+DB_PASSWORD=
+DB_HOST=127.0.0.1
+DB_PORT=3306
+```
+
+`DB_PASSWORD` va vacío porque XAMPP trae el usuario `root` sin contraseña.
+
+## 1.7 Crear las tablas y cargar los datos de prueba
+
+```powershell
+python manage.py check --database default
+python manage.py migrate
+python manage.py cargar_datos_prueba
+```
+
+- `check` comprueba la conexión. Debe decir *"System check identified no issues"*.
+- `migrate` crea las tablas. Verás líneas que terminan en `OK` y 15 tablas en phpMyAdmin.
+- `cargar_datos_prueba` es el *seeder*, como `php artisan db:seed`. Debe responder: *"Datos de prueba cargados: 2 ediciones, 4 categorías, 7 votaciones y 22 opciones."*
+
+| Qué se carga | Detalle |
+|---|---|
+| 2 ediciones | La 60.ª (2027) y la 59.ª (2026) |
+| 4 categorías | Música, Piloneras y vestuario, Presentaciones, y Música de 2026 |
+| 7 votaciones | 3 abiertas, 1 próxima, 2 cerradas y 1 borrador, que no se ve en el sitio público |
+| 22 opciones | Nombres ficticios: "Canción A", "Conjunto B", etc. |
+
+Se puede ejecutar todas las veces que quieras: no duplica nada. Las fechas se calculan desde el día en que lo ejecutas, así que hazlo antes de una presentación o de grabar el video.
+
+## 1.8 Crear tu superusuario
+
+| Tipo de usuario | Cómo se crea | Qué puede hacer |
+|---|---|---|
+| Votante | Él mismo, con **Crear cuenta** en el sitio | Ver las votaciones, votar y consultar sus votos |
+| Superusuario | Tú, con un comando | Lo anterior, y entrar a `/admin` para administrar los datos y consultar todos los votos |
+
+```powershell
+python manage.py createsuperuser
+```
+
+Responde usuario, correo y contraseña. **Al escribir la contraseña no se ve nada**: es normal. Si dice que es demasiado común, responde `N` y elige otra. No la escribas en ningún archivo del proyecto. El superusuario no viene en los datos de prueba porque las contraseñas nunca se guardan en el repositorio.
+
+## 1.9 Encender el proyecto y comprobar
+
+```powershell
+python manage.py test
+python manage.py runserver
+```
+
+`test` debe terminar en `OK`. Cuando `runserver` diga *"Starting development server at http://127.0.0.1:8000/"*, abre esa dirección en el navegador. Deja la terminal abierta mientras trabajas: Django se reinicia solo al guardar un archivo. Para apagarlo, **Ctrl + C**.
+
+Tu entorno quedó listo si:
+
+- [ ] En el inicio se ven las votaciones abiertas y las categorías.
+- [ ] **Crear cuenta** funciona: al terminar, el menú dice *Salir (tu nombre)* y muestra *Mis votos*.
+- [ ] En `/admin` entras con tu superusuario y ves Ediciones, Categorías, Votaciones, Opciones y Votos.
+- [ ] http://127.0.0.1:8000/api/categorias/ muestra el JSON.
+
+---
+
+# Parte 2. El día a día
+
+## Cada vez que vayas a trabajar
+
+1. En XAMPP, **Start** en MySQL.
+2. Trae los cambios del equipo y activa el entorno:
+
+```powershell
+git checkout main
+git pull
+cd django
+venv\Scripts\activate
+```
+
+3. Según lo que haya cambiado:
+
+| Si… | Ejecuta |
+|---|---|
+| Alguien agregó librerías (cambió `requirements.txt`) | `pip install -r requirements.txt` |
+| Alguien cambió los modelos, o sale el aviso *unapplied migration(s)* | `python manage.py migrate` |
+| Cambiaron los datos de prueba, o las votaciones ya cerraron por las fechas | `python manage.py cargar_datos_prueba` |
+
+4. Enciende el servidor: `python manage.py runserver`.
+5. Al terminar: **Ctrl + C** en la terminal y **Stop** en MySQL antes de apagar el computador. Si lo apagas con MySQL encendido, sus tablas internas se pueden dañar.
+
+## Para subir cambios
+
+No se trabaja directo sobre `main`. Se crea una rama, se sube y se hace un *pull request* en GitHub:
+
+```powershell
+git checkout -b feature/nombre-del-cambio
+git add .
+git commit -m "feat: descripcion del cambio"
+git push -u origin feature/nombre-del-cambio
+```
+
+`.gitignore` ya evita que se suban `.env` y `venv`.
+
+---
+
+# Parte 3. Cómo se construyó
+
+
 ## Paso 1. Revisar el prototipo HTML
 
 Se revisó el prototipo para decidir qué se reutiliza:
@@ -59,52 +271,16 @@ django/
 │   └── elecciones/      ediciones, categorías, votaciones y opciones
 ├── templates/           páginas HTML
 ├── static/              estilos, fuentes e imágenes del prototipo
-└── docs/                esta guía y capturas para el informe
+└── docs/                esta guía
 ```
 
 En Django, cada **app** es una parte del proyecto con un tema propio. Así el código queda ordenado.
 
-## Paso 3. Instalar Python, crear el entorno virtual e instalar Django
+## Paso 3. Instalar Django y crear el proyecto
 
-### 3.1 Instalar Python (una sola vez por computador)
+### 3.1 Instalar las librerías
 
-1. Descargar **Python 3.13** desde https://www.python.org/downloads/windows/ (instalador de 64 bits).
-2. En la primera pantalla, **marcar la casilla "Add python.exe to PATH"**. Sin eso, la terminal no encuentra Python.
-3. Al terminar, **cerrar y volver a abrir** VS Code o la terminal.
-4. Comprobar que quedó instalado:
-
-```powershell
-python --version
-```
-
-Debe responder algo como `Python 3.13.x`.
-
-### 3.2 Crear el entorno virtual
-
-Desde la carpeta `django/`:
-
-```powershell
-python -m venv venv
-```
-
-Esto crea la carpeta `venv/`, donde quedarán las librerías del proyecto. Esa carpeta **no se sube a GitHub**: cada integrante la crea en su computador.
-
-### 3.3 Activar el entorno virtual
-
-```powershell
-venv\Scripts\activate
-```
-
-Cuando está activo, la línea de la terminal empieza con **`(venv)`**. Mientras se vea así, `python` y `pip` usan las librerías de este proyecto. Para salir del entorno se escribe `deactivate`.
-
-> **Si sale un error de "ejecución de scripts deshabilitada"**, ejecutar una sola vez el siguiente comando y volver a intentar:
-> ```powershell
-> Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
-> ```
-
-### 3.4 Instalar Django y las demás librerías
-
-**La primera vez** (cuando se creó el proyecto) se instalaron así:
+Python y el entorno virtual se prepararon como en los pasos 1.1 y 1.3. **La primera vez**, cuando se creó el proyecto, las librerías se instalaron así:
 
 ```powershell
 python -m pip install --upgrade pip
@@ -115,17 +291,9 @@ pip freeze > requirements.txt
 - `Django>=4.2,<5.0`: la versión más reciente de la serie 4.2.
 - `mysqlclient`: permite que Django se comunique con MySQL/MariaDB.
 - `django-environ`: lee la configuración privada (usuario y contraseña de la base de datos) desde un archivo `.env`.
-- `pip freeze > requirements.txt`: guarda en un archivo la lista exacta de lo que quedó instalado.
+- `pip freeze > requirements.txt`: guarda en un archivo la lista exacta de lo que quedó instalado. Los demás integrantes la usan en el paso 1.4.
 
-**Los demás integrantes**, después de clonar el repositorio, solo necesitan:
-
-```powershell
-pip install -r requirements.txt
-```
-
-Ese comando lee la lista y les instala exactamente las mismas versiones.
-
-### 3.5 Crear el proyecto Django
+### 3.2 Crear el proyecto Django
 
 ```powershell
 django-admin startproject config .
@@ -140,7 +308,7 @@ Crea `manage.py` y la carpeta `config/`. El punto del final significa "créalo e
 | `config/urls.py` | Las rutas: qué página se muestra en cada dirección |
 | `config/wsgi.py` y `config/asgi.py` | Para publicar en un servidor real; no se tocan |
 
-### 3.6 Comprobar que funciona
+### 3.3 Comprobar que funciona
 
 ```powershell
 python manage.py check
@@ -197,27 +365,13 @@ Variables que usa el proyecto:
 | `DB_HOST` | `127.0.0.1` | El propio computador |
 | `DB_PORT` | `3306` | Puerto de MySQL en XAMPP |
 
-**Cada integrante, después de clonar**, hace esto desde la carpeta `django/`:
-
-```powershell
-copy .env.example .env
-python -c "import secrets; print(secrets.token_urlsafe(50))"
-```
-
-El segundo comando imprime una clave aleatoria. Se copia y se pega en `.env`, en la línea `SECRET_KEY=`.
+Cada integrante crea su propio `.env` como se explica en el paso 1.6.
 
 > **¿Por qué se borró el `settings.py` original?** Traía una clave secreta escrita en el código. Si se hubiera subido a GitHub, cualquiera podría verla, aunque después se borrara (queda en el historial). Por eso se generó una nueva y quedó solo en `.env`.
 
 ### 4.3 La base de datos
 
-1. Encender **MySQL** en el panel de XAMPP.
-2. Crear la base en phpMyAdmin (http://localhost/phpmyadmin): pestaña *Bases de datos*, nombre `votaciones_festival` y cotejamiento `utf8mb4_unicode_ci`. O con este comando SQL:
-
-```sql
-CREATE DATABASE votaciones_festival CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-```
-
-`utf8mb4` permite guardar tildes, eñes y cualquier otro carácter sin que se dañen.
+La base se crea como se explica en el paso 1.5.
 
 En la configuración también se activó el **modo estricto** de MySQL: si llega un dato que no cabe o es inválido, MySQL da un error en vez de recortarlo sin avisar.
 
@@ -330,7 +484,7 @@ Para no tener que crear todo a mano, el proyecto trae un **comando propio** que 
 python manage.py cargar_datos_prueba
 ```
 
-Carga 2 ediciones (60.ª de 2027 y 59.ª de 2026), 4 categorías, 6 votaciones y sus opciones. Las fechas se calculan desde el día en que se ejecuta, así que siempre hay votaciones **abiertas**, **próximas** y **cerradas**, y además un **borrador** que no debe verse en el sitio público.
+Carga 2 ediciones (60.ª de 2027 y 59.ª de 2026), 4 categorías, 7 votaciones y sus opciones. Las fechas se calculan desde el día en que se ejecuta, así que siempre hay votaciones **abiertas**, **próximas** y **cerradas**, y además un **borrador** que no debe verse en el sitio público.
 
 Se puede ejecutar varias veces: actualiza lo que ya existe en vez de duplicarlo.
 
@@ -409,6 +563,57 @@ El menú cambia según el usuario: muestra **Ingresar / Crear cuenta** si no ha 
 {% if user.is_authenticated %} ... Salir ... {% else %} ... Ingresar ... {% endif %}
 ```
 
+## Paso 10. Módulo de votos (Entrega 3)
+
+**Quien descarga estos cambios debe ejecutar**, dentro de `django/` y con el entorno activo:
+
+```powershell
+python manage.py migrate
+python manage.py cargar_datos_prueba
+```
+
+`migrate` crea la tabla `elecciones_voto`. El seeder deja abierta una votación en otra categoría, necesaria para demostrar el voto en una categoría diferente.
+
+### El modelo `Voto` y la regla de unicidad
+
+El voto une al usuario con la edición, la categoría y la opción. La regla central se le entrega a MySQL como una restricción (en Laravel sería `$table->unique([...])` en la migración):
+
+```python
+models.UniqueConstraint(fields=['usuario', 'edicion', 'categoria'], name='un_voto_por_usuario_categoria_edicion')
+```
+
+### Las dos capas de protección
+
+1. **El formulario** (`apps/elecciones/forms.py`) revisa antes de guardar: que la opción sea de esta votación, que la votación esté abierta y que el usuario no haya votado en la categoría. Da mensajes claros.
+2. **MySQL** es la protección final. Si llegan dos solicitudes al mismo tiempo, las dos pueden pasar la revisión del formulario, porque ninguna ve todavía el voto de la otra. Al guardar, MySQL acepta una y a la otra le responde con un error. La vista lo atrapa:
+
+```python
+try:
+    with transaction.atomic():
+        Voto.registrar(request.user, opcion)
+except IntegrityError:
+    messages.error(request, 'Ya votaste en esta categoría: ...')
+```
+
+`transaction.atomic()` hace que el error afecte solo a ese intento de guardar y no deje la conexión en mal estado.
+
+### El recorrido del voto
+
+| Paso | Qué pasa |
+|---|---|
+| 1 | En `/votaciones/<id>/` el usuario elige una opción y envía el formulario por POST |
+| 2 | La vista `votar` valida y muestra la confirmación. Todavía no guarda nada |
+| 3 | Al confirmar, llega otro POST con `confirmado`; la vista valida de nuevo y guarda |
+| 4 | Redirige a `/mis-votos/` con el mensaje de éxito |
+
+- `@login_required` envía a la página de ingreso a quien no ha iniciado sesión (en Laravel, el middleware `auth`).
+- `{% csrf_token %}` protege los formularios (en Laravel, `@csrf`).
+- En el panel de administración los votos son de solo lectura: `VotoAdmin` niega agregar, cambiar y borrar.
+
+### La API
+
+`GET /api/categorias/` está en `apps/elecciones/api.py`. Consulta MySQL, arma diccionarios de Python y los devuelve con `JsonResponse`. No necesita librerías adicionales. `prefetch_related` evita hacer una consulta por cada fila: siempre son 3 consultas, sin importar cuántos datos haya.
+
 ## Pruebas automáticas
 
 En `apps/elecciones/tests.py` y `apps/cuentas/tests.py` hay pruebas que revisan solas que el sistema funcione. Por ejemplo: que las páginas abran, que un borrador no se vea, que el registro cree el usuario y que el inicio y el cierre de sesión funcionen.
@@ -419,9 +624,107 @@ python manage.py test
 
 Django crea una base de datos temporal (`test_votaciones_festival`), ejecuta las pruebas y la borra al terminar. Si todo está bien, termina diciendo **OK**.
 
+Si una ejecución anterior se interrumpió, Django avisa que la base temporal ya existe y pregunta si la borra: se responde `yes`. Es solo la base temporal, no la del proyecto.
+
+Las pruebas `test_cp01` a `test_cp10` corresponden a los casos de la Entrega 3 (ver la Parte 4). Para ver cada una por su nombre:
+
+```powershell
+python manage.py test apps.elecciones -v 2
+```
+
 ---
 
-## Problemas comunes
+# Parte 4. Entrega 3: revisar, demostrar y documentar
+
+## Qué se agregó y cómo revisarlo
+
+Antes de revisar, ejecuta `migrate` y `cargar_datos_prueba`, y crea una **cuenta nueva** en `/cuentas/registro/`, porque un voto no se puede deshacer.
+
+| # | Qué es nuevo | Dónde | Cómo revisarlo | Debe pasar |
+|---|---|---|---|---|
+| 1 | Elegir una opción | `/votaciones/1/` | Con sesión iniciada, elige una opción y pulsa **Continuar a la confirmación** | Se abre la confirmación. Todavía no se guarda nada |
+| 2 | Confirmar el voto | Página de confirmación | Pulsa **Cambiar opción** y regresa. Luego vuelve a elegir y pulsa **Confirmar voto** | Te lleva a **Mis votos** con «Tu voto por … quedó registrado» |
+| 3 | Mis votos (menú nuevo) | `/mis-votos/` | Abre el menú **Mis votos** | Lista tu categoría, opción, votación, edición y fecha |
+| 4 | Un voto por categoría | `/votaciones/2/` | Abre el otro subevento de Música | No hay formulario: dice «Ya votaste en esta categoría por …» |
+| 5 | Otra categoría sí se permite | `/votaciones/4/` | Vota en *Vestuario más destacado* | Se registra, y **Mis votos** muestra dos filas |
+| 6 | Rechazo del duplicado | Dos pestañas | Con otra cuenta, abre la misma votación en dos pestañas. Vota en una; en la otra, elige otra opción y continúa | Aviso rojo «Ya votaste en esta categoría» |
+| 7 | Exige sesión | `/votaciones/1/` | Sal de tu cuenta y abre la votación | Pide **Ingresar para votar** y, al ingresar, vuelve a la votación |
+| 8 | Votaciones no abiertas | `/votaciones/5/` y `/votaciones/12/` | Abre la cerrada y la próxima | No ofrecen formulario |
+| 9 | Votos en el admin | `/admin/elecciones/voto/` | Entra con el superusuario y abre un voto | Se ven los datos, sin botones de agregar, guardar ni borrar |
+| 10 | API GET | `/api/categorias/` | Ábrela en el navegador | JSON con tildes, categorías, votaciones y opciones. Sin el borrador |
+| 11 | Datos de prueba | `/votaciones/4/` y `/votaciones/12/` | Ejecuta el seeder otra vez | *Vestuario* abierta, *Grupo de piloneras favorito* próxima, 7 votaciones y 22 opciones |
+| 12 | Pruebas automáticas | Terminal | `python manage.py test` | `Ran 42 tests` y `OK` |
+
+## Casos CP-01 a CP-10
+
+El **resultado obtenido**, el **estado** y el **minuto del video** los diligencia el equipo con lo que realmente salga en su ejecución.
+
+| Caso | Procedimiento | Resultado esperado | Prueba automática |
+|---|---|---|---|
+| CP-01 | Con sesión iniciada, abrir *Canción favorita del público*, elegir una opción, **Continuar** y **Confirmar voto** | Mensaje «Tu voto por … quedó registrado» y una fila nueva en `elecciones_voto` | `test_cp01_*` |
+| CP-02 | Abrir la misma votación en **dos pestañas**. Votar en la primera. En la segunda, elegir otra opción y **Continuar**. Después abrir *Agrupación favorita del público*, que es otro subevento de Música | La segunda pestaña muestra «Ya votaste en esta categoría»; el otro subevento no ofrece el formulario | `test_cp02_*` |
+| CP-03 | Votar en *Vestuario más destacado* | Se registra: es otra categoría | `test_cp03_*` |
+| CP-04 | Sin sesión, abrir una votación abierta y pulsar **Ingresar para votar**. Evidencia adicional: la prueba automática envía el POST sin sesión | Pide ingresar y no guarda nada. Sin token CSRF responde 403 | `test_cp04_*` |
+| CP-05 | Abrir *Presentación más recordada* y *Grupo de piloneras favorito*: no ofrecen formulario. Evidencia del rechazo en el servidor: la prueba automática envía el POST | «Esta votación no está abierta». Un borrador o una categoría inactiva responden 404 | `test_cp05_*` |
+| CP-06 | Con una cuenta que no haya votado en Música: en la página de la votación, con las herramientas del navegador (F12), cambiar el `value` de una opción por el id de una opción de otra categoría (se ve en `/api/categorias/`) y enviar | «La opción enviada no pertenece a esta votación» y no se guarda nada | `test_cp06_*` |
+| CP-07 | Abrir **Mis votos** en el menú | Lista las categorías votadas, solo las de ese usuario | `test_cp07_*` |
+| CP-08 | En `/admin`, abrir **Votos** y comparar con `SELECT * FROM elecciones_voto` en phpMyAdmin | Los datos coinciden. No hay opción de agregar, cambiar ni borrar | `test_cp08_*` |
+| CP-09 | Ejecutar `python manage.py test apps.elecciones.tests.ConcurrenciaTests -v 2` y capturar la salida | Termina en `OK`: de 8 solicitudes simultáneas queda 1 voto y ninguna da error del servidor | `test_cp09_*` |
+| CP-10 | Abrir `/api/categorias/` en el navegador o en Postman | JSON válido con categorías, votaciones y opciones reales | `test_cp10_*` |
+
+## Consultas para mostrar MySQL en el video
+
+En phpMyAdmin, pestaña SQL. Esta muestra la restricción; debe aparecer `UNIQUE KEY un_voto_por_usuario_categoria_edicion (usuario_id, edicion_id, categoria_id)`:
+
+```sql
+SHOW CREATE TABLE elecciones_voto;
+```
+
+Esta muestra los votos con nombres:
+
+```sql
+SELECT u.username, e.anio, c.nombre AS categoria, o.nombre AS opcion, v.fecha
+FROM elecciones_voto v
+JOIN auth_user u ON u.id = v.usuario_id
+JOIN elecciones_edicion e ON e.id = v.edicion_id
+JOIN elecciones_categoria c ON c.id = v.categoria_id
+JOIN elecciones_opcion o ON o.id = v.opcion_id;
+```
+
+Durante la grabación, usa solo datos ficticios y no muestres el archivo `.env`.
+
+## Datos para la ficha de acceso del PDF
+
+| Elemento | Dato |
+|---|---|
+| Repositorio | https://github.com/sebastianbh/vallenata-festival-voting-system (rama `main`) |
+| README | https://github.com/sebastianbh/vallenata-festival-voting-system/blob/main/django/README.md |
+| API GET | `GET /api/categorias/`, en `django/apps/elecciones/api.py` |
+| Control de duplicados | `django/apps/elecciones/models.py` (`UniqueConstraint`), `forms.py` (validación) y `views.py` (vista `votar`, `IntegrityError`) |
+
+La API solo corre en `127.0.0.1`, así que en el PDF no se presenta como enlace remoto: se demuestra en el video y con una captura.
+
+---
+
+# Problemas comunes
+
+| Si te pasa esto… | Haz esto |
+|---|---|
+| "python" no se reconoce como comando | Cierra VS Code por completo y ábrelo otra vez. Si sigue igual, ejecuta el instalador de Python, elige *Modify* y marca *Add Python to environment variables* |
+| "La ejecución de scripts está deshabilitada" | Ejecuta una vez `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` y vuelve a activar |
+| `No module named 'django'` o `'environ'` | No activaste el entorno. Ejecuta `venv\Scripts\activate` y, si hace falta, `pip install -r requirements.txt` |
+| `manage.py` no se encuentra | Estás en la carpeta equivocada. Entra con `cd django` |
+| `Can't connect to server` (error 2002 o 2003) | MySQL está apagado. Dale **Start** en XAMPP |
+| `Unknown database 'votaciones_festival'` | Falta crear la base. Repite el paso 1.5 |
+| `Access denied for user 'root'` | Tu `root` tiene contraseña. Escríbela en `DB_PASSWORD` dentro de `.env` |
+| `Set the SECRET_KEY environment variable` | Falta `.env` o su línea `SECRET_KEY`. Repite el paso 1.6. Debe estar al lado de `manage.py` |
+| `You have N unapplied migration(s)` al encender el servidor | Faltan tablas. Detén el servidor y ejecuta `python manage.py migrate`: `runserver` no lo hace solo |
+| `Table ... doesn't exist` | Igual que el anterior: ejecuta `python manage.py migrate` |
+| El sitio abre, pero sin ediciones ni votaciones | La base está vacía. Ejecuta `python manage.py cargar_datos_prueba` |
+| No hay votaciones abiertas | Las fechas ya pasaron. Ejecuta `python manage.py cargar_datos_prueba` |
+| `Got an error creating the test database ... database exists` | Una ejecución de pruebas anterior se interrumpió. Responde `yes`: solo borra la base temporal |
+| Olvidé la contraseña del superusuario | `python manage.py changepassword usuario` |
+| `That port is already in use` | Ya hay un servidor encendido en otra terminal. Ciérralo con **Ctrl + C** o usa `python manage.py runserver 8001` |
 
 ### XAMPP: "MySQL shutdown unexpectedly"
 
@@ -435,7 +738,7 @@ Django crea una base de datos temporal (`test_votaciones_festival`), ejecuta las
 
 ---
 
-## Resumen de comandos
+# Resumen de comandos
 
 | Comando | Qué hace |
 |---|---|
@@ -457,3 +760,9 @@ Django crea una base de datos temporal (`test_votaciones_festival`), ejecuta las
 | `python manage.py createsuperuser` | Crea un usuario administrador para entrar a `/admin` |
 | `python manage.py cargar_datos_prueba` | Carga los datos de prueba ficticios |
 | `python manage.py test` | Ejecuta las pruebas automáticas |
+| `python manage.py changepassword usuario` | Cambia la contraseña de un usuario |
+| `python manage.py test apps.elecciones -v 2` | Ejecuta las pruebas de una app y muestra cada una por su nombre |
+| `git branch` | Muestra en qué rama estás (marcada con `*`) |
+| `git checkout nombre-rama` | Cambia a otra rama |
+| `git checkout -b nombre-rama` | Crea una rama nueva y se cambia a ella |
+| `git pull` | Trae los cambios que subió el equipo a tu rama actual |
