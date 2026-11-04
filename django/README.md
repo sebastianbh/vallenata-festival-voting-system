@@ -30,7 +30,7 @@ El diseño reutiliza el prototipo HTML/CSS de la Entrega 1, que está en la raí
 
 | Herramienta | Versión |
 |---|---|
-| Python | 3.13 |
+| Python | 3.13 (no 3.14 ni superiores: Django 4.2 no funciona con ellas) |
 | Django | 4.2 LTS |
 | MySQL / MariaDB | MariaDB 10.4 (incluido en XAMPP 8.2) |
 | mysqlclient | conector de MySQL para Django |
@@ -61,7 +61,7 @@ django/
 
 ## Instalación
 
-Requisitos previos: **Python 3.13** (marcando *Add python.exe to PATH* al instalar), **XAMPP** y **Git**.
+Requisitos previos: **Python 3.13** (marcando *Add python.exe to PATH* al instalar; no la 3.14 ni superiores), **XAMPP** y **Git**.
 
 ### 0. Clonar el repositorio
 
@@ -78,7 +78,7 @@ A partir de aquí, todos los comandos se ejecutan en PowerShell, dentro de la ca
 
 ```powershell
 cd django
-python -m venv venv
+py -3.13 -m venv venv
 venv\Scripts\activate
 python -m pip install --upgrade pip
 pip install -r requirements.txt
@@ -86,9 +86,11 @@ pip install -r requirements.txt
 
 Si PowerShell muestra *"la ejecución de scripts está deshabilitada"*, ejecutar una vez `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` y volver a activar.
 
+`py -3.13` crea el entorno con Python 3.13 aunque el computador tenga otras versiones instaladas.
+
 ### 2. Base de datos
 
-1. Encender **MySQL** en el panel de XAMPP.
+1. Encender **MySQL** en el panel de XAMPP, y también **Apache** si se va a usar phpMyAdmin.
 2. Crear la base en phpMyAdmin (http://localhost/phpmyadmin) o con este SQL:
 
 ```sql
