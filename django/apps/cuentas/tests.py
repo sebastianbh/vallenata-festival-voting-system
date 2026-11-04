@@ -36,6 +36,15 @@ class RegistroTests(TestCase):
         self.assertContains(respuesta, 'Ya existe una cuenta con este correo.')
 
 
+class VerClaveTests(TestCase):
+    def test_los_campos_de_contrasena_tienen_el_boton_del_ojo(self):
+        casos = [(reverse('cuentas:ingresar'), 1), (reverse('cuentas:registro'), 2)]
+        for url, campos in casos:
+            respuesta = self.client.get(url)
+            self.assertContains(respuesta, 'password-field__toggle', count=campos)
+            self.assertContains(respuesta, 'type="password"', count=campos)
+
+
 class IngresoSalidaTests(TestCase):
     def setUp(self):
         User.objects.create_user('votante', 'votante@ejemplo.co', CLAVE_PRUEBA, first_name='Votante')

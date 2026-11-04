@@ -613,3 +613,42 @@ textarea.input {
       justify-items: end;
     }
 }
+
+/* Campo de contraseña con el botón del ojo para verla */
+.password-field {
+  position: relative;
+}
+
+.password-field .input {
+  padding-right: calc(var(--touch-target) + var(--space-2));
+}
+
+.password-field__toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.125rem;
+  transform: translateY(-50%);
+  display: inline-grid;
+  place-items: center;
+  width: var(--touch-target);
+  height: var(--touch-target);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-control);
+  color: var(--color-ink-soft);
+  cursor: pointer;
+}
+
+.password-field__toggle:hover {
+  color: var(--color-ink);
+}
+
+.password-field__toggle:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -4px;
+}
+
+.password-field__toggle[hidden],
+.password-field__toggle .icon[hidden] {
+  display: none;
+}

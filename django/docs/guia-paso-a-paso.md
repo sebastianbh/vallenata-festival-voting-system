@@ -52,15 +52,15 @@ Todo se hace en Windows, con la terminal de VS Code. Sigue los pasos en orden.
 | Programa | Para qué | Dónde se consigue |
 |---|---|---|
 | Python 3.13 | El lenguaje del proyecto | python.org/downloads/windows |
-| XAMPP | Solo para usar su MySQL (MariaDB) | apachefriends.org |
+| XAMPP | Su MySQL (MariaDB) y phpMyAdmin | apachefriends.org |
 | Git | Descargar el proyecto y subir cambios | git-scm.com |
 | VS Code | Editor de código | code.visualstudio.com |
 
-Django no se instala a mano: se instala en el paso 1.4 con un comando. El Apache de XAMPP tampoco se usa, porque Django trae su propio servidor.
+Django no se instala a mano: se instala en el paso 1.4 con un comando. Django trae su propio servidor, así que no usa el Apache de XAMPP. Apache solo hace falta para abrir phpMyAdmin.
 
 ## 1.1 Instalar Python
 
-1. Descarga **Python 3.13** (64 bits) desde https://www.python.org/downloads/windows/.
+1. Descarga **Python 3.13** (64 bits) desde https://www.python.org/downloads/windows/. **No uses la 3.14 ni una más nueva**: Django 4.2 falla con ellas en el panel de administración.
 2. En la primera pantalla del instalador, **marca la casilla "Add python.exe to PATH"**. Es lo más importante de todo el proceso.
 3. Haz clic en *Install Now*.
 4. Cierra VS Code por completo y vuelve a abrirlo. La terminal solo reconoce a Python después de reiniciarla.
@@ -100,9 +100,11 @@ El entorno virtual es una carpeta llamada `venv` donde quedan Django y las demá
 
 ```powershell
 cd django
-python -m venv venv
+py -3.13 -m venv venv
 venv\Scripts\activate
 ```
+
+`py -3.13` usa Python 3.13 aunque tengas otras versiones instaladas. Para comprobarlo, con el entorno activo, `python --version` debe decir `3.13.x`.
 
 Cuando está activo, la línea de la terminal empieza con **`(venv)`**. En cada terminal nueva hay que activarlo otra vez. Para salir se escribe `deactivate`.
 
@@ -122,7 +124,7 @@ Esto instala exactamente las mismas versiones que usa el resto del equipo.
 
 ## 1.5 Crear la base de datos
 
-1. En el panel de XAMPP, presiona **Start** en MySQL. Debe quedar en verde, con el puerto 3306. Apache no hace falta.
+1. En el panel de XAMPP, presiona **Start** en **MySQL** y en **Apache**. Los dos deben quedar en verde. Apache es necesario para abrir phpMyAdmin; Django funciona solo con MySQL.
 2. Entra a http://localhost/phpmyadmin, pestaña **SQL**, pega esto y presiona *Continuar*:
 
 ```sql
@@ -319,7 +321,7 @@ python manage.py runserver
 - `runserver` enciende un servidor de prueba. Al abrir http://127.0.0.1:8000 en el navegador aparece la página de bienvenida de Django (un cohete).
 - Para apagar el servidor se presiona `Ctrl + C`.
 
-> No se usa el Apache de XAMPP: Django trae su propio servidor para desarrollo. De XAMPP solo se usa MySQL.
+> Django trae su propio servidor para desarrollo, así que no usa el Apache de XAMPP. Apache solo hace falta para abrir phpMyAdmin (http://localhost/phpmyadmin).
 
 ## Paso 4. Conectar Django con MySQL usando un archivo `.env`
 
@@ -506,6 +508,7 @@ Algunos detalles:
 - No se permiten dos cuentas con el mismo correo.
 - **Cerrar sesión se hace con un botón que envía un formulario (POST)** y no con un enlace normal. Así otra página no puede cerrar tu sesión con solo poner un enlace oculto. Es lo que recomienda Django.
 - Todos los formularios llevan `{% csrf_token %}`, una protección de Django contra envíos falsificados desde otros sitios.
+- **El botón del ojo** permite ver la contraseña mientras se escribe, en Ingresar y en Crear cuenta. El botón está en `templates/parciales/_campo.html`, que lo agrega a cualquier campo de tipo contraseña. El archivo `static/js/ver-clave.js` cambia el campo de `password` a `text` y viceversa, y `static/css/components.css` le da el estilo. La contraseña se envía igual: solo cambia cómo se ve en pantalla.
 
 ## Paso 9. Plantillas y páginas públicas
 
@@ -517,6 +520,8 @@ Los estilos, las fuentes y las imágenes del prototipo se copiaron a `static/`. 
 {% load static %}
 <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
 ```
+
+En `base.html` los CSS y JS terminan en `?v=2`. El navegador guarda una copia de estos archivos y a veces no los vuelve a descargar aunque cambien. Por ejemplo, al agregar el botón del ojo, el botón quedaba debajo del campo porque el navegador seguía usando el CSS viejo. Cada vez que se cambie un CSS o un JS, hay que subir ese número en `base.html` (`?v=3`, `?v=4`…), y así todos los navegadores descargan la versión nueva.
 
 ### Herencia de plantillas
 
@@ -672,6 +677,66 @@ El **resultado obtenido**, el **estado** y el **minuto del video** los diligenci
 | CP-09 | Ejecutar `python manage.py test apps.elecciones.tests.ConcurrenciaTests -v 2` y capturar la salida | Termina en `OK`: de 8 solicitudes simultáneas queda 1 voto y ninguna da error del servidor | `test_cp09_*` |
 | CP-10 | Abrir `/api/categorias/` en el navegador o en Postman | JSON válido con categorías, votaciones y opciones reales | `test_cp10_*` |
 
+## Guion del video
+
+Un solo video por equipo, de **máximo 8 minutos**, con pantalla legible y audio claro. Lo puede presentar una sola persona, el delegado.
+
+### Antes de grabar (el mismo día)
+
+1. Pon el proyecto al día. Con MySQL encendido, dentro de `django/` y con el entorno activo:
+
+```powershell
+git checkout main
+git pull
+python manage.py migrate
+python manage.py cargar_datos_prueba
+python manage.py test
+python manage.py runserver
+```
+
+   El seeder se corre el mismo día porque las fechas de las votaciones se calculan desde ese momento.
+
+2. Crea **dos cuentas nuevas** en `/cuentas/registro/`, con nombres y correos ficticios (por ejemplo `votante1` y `votante2`). Un voto no se puede borrar: si algo sale mal, usa otra cuenta nueva.
+3. Deja abiertas estas pestañas:
+   - el sitio (`http://127.0.0.1:8000`);
+   - phpMyAdmin (con **Apache** encendido en XAMPP) con las dos consultas de abajo, listas para ejecutar;
+   - `/admin`, ya con sesión de superusuario en **otro navegador** o en una ventana de incógnito, para no cerrar la sesión del votante;
+   - `/api/categorias/`.
+4. En VS Code, deja abiertos estos archivos de `django/apps/elecciones/`: `models.py` (al final, el modelo `Voto`), `forms.py`, `views.py` (la vista `votar`) y `api.py`.
+5. Pon el zoom del navegador en 125 % y agranda la letra de VS Code y de la terminal. Activa el modo *No molestar* de Windows y no muestres el archivo `.env`.
+6. Para grabar sirve la **Herramienta Recortes** de Windows (`Windows + Shift + R`, opción de video) u **OBS Studio**, que es gratis. No uses la Xbox Game Bar, porque graba una sola ventana y en el video hay que cambiar entre el navegador, VS Code y phpMyAdmin.
+7. Ten a mano un cronómetro o anota los minutos al ver el video: el PDF pide los **minutos reales** de cada parte.
+
+### Paso a paso
+
+| Minuto | Qué mostrar | Cómo | Casos |
+|---|---|---|---|
+| 0:00–0:45 | Presentación | Nombre del equipo, los cuatro integrantes, quién presenta y qué se implementó en esta entrega | — |
+| 0:45–1:30 | Inicio de sesión y categorías | Entrar con `votante1`. Recorrer **Ediciones → 60.ª edición → Música**: los datos salen de MySQL | — |
+| 1:30–2:30 | Voto válido | Abrir *Canción favorita del público* en **dos pestañas**. En la primera: elegir una opción, **Continuar a la confirmación**, **Confirmar voto**. Termina en **Mis votos** con el mensaje de éxito | CP-01 |
+| 2:30–3:30 | Segundo voto en la misma categoría | En la segunda pestaña, elegir **otra** opción y continuar: sale el aviso rojo «Ya votaste en esta categoría». Luego abrir *Agrupación favorita del público*, otro subevento de Música: no ofrece formulario | CP-02 |
+| 3:30–4:15 | Voto en otra categoría | Votar en *Vestuario más destacado* (Piloneras y vestuario): se registra | CP-03 |
+| 4:15–5:00 | Historial y administración | **Mis votos** muestra las dos categorías. En `/admin` → **Votos** se ven los mismos datos, sin botón de agregar ni de borrar. En phpMyAdmin, la consulta de votos con nombres coincide | CP-07, CP-08 |
+| 5:00–6:00 | API GET | Abrir `/api/categorias/`. Señalar la ruta, las categorías, sus votaciones y opciones, y que el borrador no aparece | CP-10 |
+| 6:00–7:00 | MySQL y código | En phpMyAdmin, `SHOW CREATE TABLE elecciones_voto` y la línea `UNIQUE KEY`. En VS Code: `UniqueConstraint` en `models.py`, las validaciones en `forms.py`, el `try / except IntegrityError` en `views.py` y `api.py` | — |
+| 7:00–8:00 | Pruebas adicionales y cierre | Salir de la cuenta y abrir una votación: pide **Ingresar para votar** (CP-04). Abrir *Presentación más recordada* (cerrada) y *Grupo de piloneras favorito* (próxima): no ofrecen formulario (CP-05). En la terminal, `python manage.py test apps.elecciones.tests.ConcurrenciaTests -v 2` termina en `OK` (CP-09). Cerrar con una conclusión corta | CP-04, CP-05, CP-09 |
+
+**CP-06 (opción de otra categoría)** toma tiempo en vivo. Si cabe en el video, hazlo con `votante2` en *Canción favorita del público*:
+
+1. Busca en `/api/categorias/` el `id` de una opción de otra categoría, por ejemplo *Vestuario A*.
+2. Clic derecho sobre una opción → **Inspeccionar**.
+3. En la línea `<input ... name="opcion" value="1">`, haz doble clic en el número y cámbialo por ese `id`.
+4. Elige esa opción y pulsa **Continuar**: sale «La opción enviada no pertenece a esta votación».
+
+Si no cabe, documéntalo en el PDF con capturas y con la salida de `python manage.py test apps.elecciones -v 2`, donde aparecen todas las pruebas `test_cp01` a `test_cp10` en `ok`. Lo mismo sirve para cualquier caso que no salga en el video.
+
+### Después de grabar
+
+1. Revisa que dure 8 minutos o menos y que se lea la pantalla.
+2. Súbelo a YouTube como **No listado**.
+3. Abre el enlace en una ventana de incógnito, sin sesión, y comprueba que se reproduce.
+4. Pasa al equipo el enlace, la duración y los minutos reales de cada parte para el PDF.
+
 ## Consultas para mostrar MySQL en el video
 
 En phpMyAdmin, pestaña SQL. Esta muestra la restricción; debe aparecer `UNIQUE KEY un_voto_por_usuario_categoria_edicion (usuario_id, edicion_id, categoria_id)`:
@@ -723,6 +788,7 @@ La API solo corre en `127.0.0.1`, así que en el PDF no se presenta como enlace 
 | El sitio abre, pero sin ediciones ni votaciones | La base está vacía. Ejecuta `python manage.py cargar_datos_prueba` |
 | No hay votaciones abiertas | Las fechas ya pasaron. Ejecuta `python manage.py cargar_datos_prueba` |
 | `Got an error creating the test database ... database exists` | Una ejecución de pruebas anterior se interrumpió. Responde `yes`: solo borra la base temporal |
+| `'super' object has no attribute 'dicts'` en el admin (`change_list.html`) | Tienes Python 3.14 o más nuevo, y Django 4.2 solo funciona hasta la 3.13. Instala Python 3.13 y crea de nuevo el entorno: `deactivate`, borra la carpeta `venv`, y luego `py -3.13 -m venv venv`, `venv\Scripts\activate` y `pip install -r requirements.txt` |
 | Olvidé la contraseña del superusuario | `python manage.py changepassword usuario` |
 | `That port is already in use` | Ya hay un servidor encendido en otra terminal. Ciérralo con **Ctrl + C** o usa `python manage.py runserver 8001` |
 
@@ -743,7 +809,7 @@ La API solo corre en `127.0.0.1`, así que en el PDF no se presenta como enlace 
 | Comando | Qué hace |
 |---|---|
 | `python --version` | Muestra la versión de Python instalada |
-| `python -m venv venv` | Crea el entorno virtual |
+| `py -3.13 -m venv venv` | Crea el entorno virtual con Python 3.13 |
 | `venv\Scripts\activate` | Activa el entorno virtual |
 | `deactivate` | Sale del entorno virtual |
 | `pip install -r requirements.txt` | Instala las librerías del proyecto |

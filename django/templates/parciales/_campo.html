@@ -4,7 +4,18 @@
     <label class="check">{{ campo }} <span>{{ campo.label }}</span></label>
   {% else %}
     <label class="field__label" for="{{ campo.id_for_label }}">{{ campo.label }}</label>
-    {{ campo }}
+    {% if campo.field.widget.input_type == 'password' %}
+      {# Campo de contraseña con el botón del ojo para verla (static/js/ver-clave.js) #}
+      <div class="password-field">
+        {{ campo }}
+        <button class="password-field__toggle" type="button" aria-controls="{{ campo.id_for_label }}" aria-pressed="false" aria-label="Mostrar contraseña" hidden>
+          <svg class="icon password-field__eye" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+          <svg class="icon password-field__eye-off" viewBox="0 0 24 24" aria-hidden="true" focusable="false" hidden><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"></path><circle cx="12" cy="12" r="3"></circle><path d="M3 3l18 18"></path></svg>
+        </button>
+      </div>
+    {% else %}
+      {{ campo }}
+    {% endif %}
     {% if campo.help_text %}<div class="field__hint">{{ campo.help_text|safe }}</div>{% endif %}
   {% endif %}
   {% for error in campo.errors %}
