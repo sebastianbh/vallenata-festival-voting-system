@@ -1,5 +1,11 @@
 # Vallenata Festival Voting System
 
+> **Entrega 3 · Proyecto Django + MySQL:** el sistema de votaciones está en la carpeta [`django/`](django/).
+> Instalación, configuración y ejecución: **[django/README.md](django/README.md)**.
+> Guía del equipo: [django/docs/guia-paso-a-paso.md](django/docs/guia-paso-a-paso.md).
+>
+> Lo que sigue en esta página describe el prototipo HTML de la Entrega 1, que está en la raíz del repositorio.
+
 Interactive front-end prototype of a configurable public voting platform for the 60th Festival de la Leyenda Vallenata (Valledupar, Colombia, April 28 to May 1, 2027).
 
 **Live demo:** https://jsanchez542-hub.github.io/vallenata-festival-voting-system/

@@ -645,20 +645,22 @@ python manage.py test apps.elecciones -v 2
 
 Antes de revisar, ejecuta `migrate` y `cargar_datos_prueba`, y crea una **cuenta nueva** en `/cuentas/registro/`, porque un voto no se puede deshacer.
 
+Los números de las direcciones (por ejemplo `/votaciones/3/`) cambian en cada computador, así que las votaciones se buscan **por su nombre**: **Ediciones → 60.ª edición →** la categoría **→** la votación.
+
 | # | Qué es nuevo | Dónde | Cómo revisarlo | Debe pasar |
 |---|---|---|---|---|
-| 1 | Elegir una opción | `/votaciones/1/` | Con sesión iniciada, elige una opción y pulsa **Continuar a la confirmación** | Se abre la confirmación. Todavía no se guarda nada |
+| 1 | Elegir una opción | *Canción favorita del público* (Música) | Con sesión iniciada, elige una opción y pulsa **Continuar a la confirmación** | Se abre la confirmación. Todavía no se guarda nada |
 | 2 | Confirmar el voto | Página de confirmación | Pulsa **Cambiar opción** y regresa. Luego vuelve a elegir y pulsa **Confirmar voto** | Te lleva a **Mis votos** con «Tu voto por … quedó registrado» |
 | 3 | Mis votos (menú nuevo) | `/mis-votos/` | Abre el menú **Mis votos** | Lista tu categoría, opción, votación, edición y fecha |
-| 4 | Un voto por categoría | `/votaciones/2/` | Abre el otro subevento de Música | No hay formulario: dice «Ya votaste en esta categoría por …» |
-| 5 | Otra categoría sí se permite | `/votaciones/4/` | Vota en *Vestuario más destacado* | Se registra, y **Mis votos** muestra dos filas |
+| 4 | Un voto por categoría | *Agrupación favorita del público* (Música) | Abre el otro subevento de Música | No hay formulario: dice «Ya votaste en esta categoría por …» |
+| 5 | Otra categoría sí se permite | *Vestuario más destacado* (Piloneras y vestuario) | Vota en *Vestuario más destacado* | Se registra, y **Mis votos** muestra dos filas |
 | 6 | Rechazo del duplicado | Dos pestañas | Con otra cuenta, abre la misma votación en dos pestañas. Vota en una; en la otra, elige otra opción y continúa | Aviso rojo «Ya votaste en esta categoría» |
-| 7 | Exige sesión | `/votaciones/1/` | Sal de tu cuenta y abre la votación | Pide **Ingresar para votar** y, al ingresar, vuelve a la votación |
-| 8 | Votaciones no abiertas | `/votaciones/5/` y `/votaciones/12/` | Abre la cerrada y la próxima | No ofrecen formulario |
+| 7 | Exige sesión | *Canción favorita del público* | Sal de tu cuenta y abre la votación | Pide **Ingresar para votar** y, al ingresar, vuelve a la votación |
+| 8 | Votaciones no abiertas | *Presentación más recordada* y *Grupo de piloneras favorito* | Abre la cerrada y la próxima | No ofrecen formulario |
 | 9 | Votos en el admin | `/admin/elecciones/voto/` | Entra con el superusuario y abre un voto | Se ven los datos, sin botones de agregar, guardar ni borrar |
 | 10 | API GET | `/api/categorias/` | Ábrela en el navegador | JSON con tildes, categorías, votaciones y opciones. Sin el borrador |
-| 11 | Datos de prueba | `/votaciones/4/` y `/votaciones/12/` | Ejecuta el seeder otra vez | *Vestuario* abierta, *Grupo de piloneras favorito* próxima, 7 votaciones y 22 opciones |
-| 12 | Pruebas automáticas | Terminal | `python manage.py test` | `Ran 42 tests` y `OK` |
+| 11 | Datos de prueba | *Vestuario más destacado* y *Grupo de piloneras favorito* | Ejecuta el seeder otra vez | *Vestuario* abierta, *Grupo de piloneras favorito* próxima, 7 votaciones y 22 opciones |
+| 12 | Pruebas automáticas | Terminal | `python manage.py test` | `Ran 43 tests` y `OK` |
 
 ## Casos CP-01 a CP-10
 
