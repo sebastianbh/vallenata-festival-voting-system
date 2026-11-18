@@ -12,6 +12,8 @@ urlpatterns = [
     path('categorias/<int:pk>/', views.detalle_categoria, name='detalle_categoria'),
     path('votaciones/<int:pk>/', views.detalle_votacion, name='detalle_votacion'),
     path('votaciones/<int:pk>/votar/', views.votar, name='votar'),
+    path('votaciones/<int:pk>/resultados/', views.resultados_votacion, name='resultados_votacion'),
+    path('resultados/', views.lista_resultados, name='lista_resultados'),
     path('mis-votos/', views.mis_votos, name='mis_votos'),
     path('api/categorias/', api.categorias, name='api_categorias'),
 ]

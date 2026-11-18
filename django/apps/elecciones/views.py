@@ -36,7 +36,8 @@ def votaciones_visibles():
         Votacion.objects
         .filter(publicada=True, categoria__activa=True, categoria__edicion__activa=True)
         .select_related('categoria__edicion')
-        .annotate(num_opciones=Count('opciones'))
+        # distinct=True: al contar dos cosas a la vez el JOIN repite filas y los números saldrían inflados
+        .annotate(num_opciones=Count('opciones', distinct=True), num_votos=Count('opciones__votos', distinct=True))
     )
 
 
@@ -103,9 +104,41 @@ def detalle_votacion(request, pk):
         'opciones': votacion.opciones.all(),
         'voto': voto,
         'puede_votar': request.user.is_authenticated and votacion.estado == Votacion.ABIERTA and not voto,
+        'ver_resultados': votacion.resultados_visibles_para(request.user),
         'migas': migas_hasta(miga_edicion(categoria.edicion), miga_categoria(categoria), (votacion.titulo, None)),
     }
     return render(request, 'elecciones/votacion_detalle.html', contexto)
+
+
+def lista_resultados(request):
+    """Votaciones cuyo conteo ya se puede ver, según la regla que eligió la organización en cada una."""
+    votaciones = votaciones_visibles().filter(fecha_apertura__lte=timezone.now())
+    if not request.user.is_staff:  # la organización ve todas; el público solo las que la regla permite
+        votaciones = Votacion.con_resultados_publicos(votaciones)
+    votaciones = votaciones.order_by('-categoria__edicion__anio', 'categoria__nombre', '-fecha_cierre')
+    contexto = {
+        'votaciones': votaciones,
+        'migas': [('Inicio', reverse('elecciones:inicio')), ('Resultados', None)],
+    }
+    return render(request, 'elecciones/resultados.html', contexto)
+
+
+def resultados_votacion(request, pk):
+    votacion = get_object_or_404(votaciones_visibles(), pk=pk)
+    categoria = votacion.categoria
+    visibles = votacion.resultados_visibles_para(request.user)
+    contexto = {
+        'votacion': votacion,
+        'visibles': visibles,
+        # Solo se cuentan los votos cuando la regla lo permite: si no, ni se consultan
+        'conteo': votacion.conteo() if visibles else None,
+        'voto': Voto.de_usuario(request.user, categoria) if request.user.is_authenticated else None,
+        'migas': migas_hasta(
+            miga_edicion(categoria.edicion), miga_categoria(categoria),
+            (votacion.titulo, reverse('elecciones:detalle_votacion', args=[pk])), ('Resultados', None),
+        ),
+    }
+    return render(request, 'elecciones/votacion_resultados.html', contexto)
 
 
 @login_required

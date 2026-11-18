@@ -522,7 +522,81 @@
 
   .poll-layout--split {
       grid-template-columns: minmax(0, 1.5fr) minmax(18rem, 1fr);
+      /* Las opciones a la izquierda; la acción y los detalles, apilados a la derecha */
+      grid-template-areas: "main action" "main details";
+      grid-template-rows: auto 1fr;
       align-items: start;
-      gap: var(--space-8);
+      column-gap: var(--space-8);
+      row-gap: var(--space-6);
+    }
+
+  .poll-layout--split > .poll-action { grid-area: action; }
+  .poll-layout--split > .poll-main { grid-area: main; }
+  .poll-layout--split > .poll-details { grid-area: details; }
+}
+
+/* ---- Resultados ---- */
+
+.results-summary {
+  font-size: var(--text-md);
+}
+
+.results-group + .results-group {
+  margin-top: var(--space-7);
+}
+
+.result-list__head {
+  flex-wrap: wrap;
+}
+
+.vote-tag {
+  display: inline-block;
+  margin-left: var(--space-2);
+  padding: 0.1rem var(--space-2);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  vertical-align: middle;
+  color: var(--color-info);
+  background: var(--color-info-bg);
+}
+
+/* ---- Ajustes para celular ---- */
+
+/* Botón de votar fijo en la parte de abajo mientras se recorren las opciones */
+.poll-form__submit {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  padding: var(--space-3) 0;
+  background: var(--color-paper);
+  box-shadow: 0 -0.75rem 1rem -0.75rem rgb(0 0 0 / 0.25);
+}
+
+/* En pantalla grande el botón de votar ya no necesita quedar fijo */
+@media (min-width: 60rem) {
+  .poll-form__submit {
+      position: static;
+      padding: 0;
+      background: none;
+      box-shadow: none;
+    }
+}
+
+/* Dos botones: uno al lado del otro si caben, uno debajo del otro si no */
+.button-pair {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.button-pair > .button {
+  flex: 1 1 12rem;
+}
+
+/* Las acciones de cada fila ocupan todo el ancho en celular: más fáciles de tocar */
+@media (max-width: 47.99rem) {
+  .row-list__action,
+  .form-actions > .button {
+      width: 100%;
     }
 }

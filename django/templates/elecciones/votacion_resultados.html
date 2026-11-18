@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block titulo %}Resultados · {{ votacion.titulo }}{% endblock %}
+
+{% block banner %}
+<section class="page-banner on-stage" aria-labelledby="page-title">
+  <div class="container">
+    <h1 class="page-banner__title" id="page-title">{{ votacion.titulo }}</h1>
+    <div class="page-banner__meta">
+      {% include 'parciales/_estado.html' %}
+      <span class="meta-item">{{ votacion.categoria.nombre }}</span>
+      <span class="meta-item">{% include 'parciales/_ventana.html' %}</span>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block migas %}{% include 'parciales/_migas.html' %}{% endblock %}
+
+{% block contenido %}
+<div class="container container--narrow poll-layout">
+  <section class="stack" aria-labelledby="results-title">
+    <h2 id="results-title">Resultados</h2>
+
+    {% if visibles %}
+      {% if not votacion.resultados_publicos %}
+        {# Un administrador ve el conteo antes de que sea público: se le avisa para que no lo comparta #}
+        <div class="notice">Lo ves porque eres de la organización. El público todavía no puede verlo (regla: {{ votacion.get_resultados_display|lower }}).</div>
+      {% endif %}
+      {% if votacion.estado == 'abierta' %}
+        <div class="notice">Resultados parciales: la votación sigue abierta y el conteo puede cambiar.</div>
+      {% endif %}
+
+      {% if conteo.total %}
+        <p class="results-summary">
+          {% if conteo.empate %}
+            Empate entre {% for opcion in conteo.lideres %}<strong>{{ opcion.nombre }}</strong>{% if not forloop.last %}{% if forloop.revcounter == 2 %} y {% else %}, {% endif %}{% endif %}{% endfor %}.
+          {% elif votacion.estado == 'cerrada' %}
+            Ganó <strong>{{ conteo.lideres.0.nombre }}</strong>.
+          {% else %}
+            Va adelante <strong>{{ conteo.lideres.0.nombre }}</strong>.
+          {% endif %}
+        </p>
+      {% endif %}
+
+      <ol class="result-list">
+        {% for opcion in conteo.opciones %}
+          <li class="result-list__row">
+            <div class="result-list__head">
+              <span class="result-list__name">{{ opcion.nombre }}{% if voto and voto.opcion_id == opcion.pk %} <span class="vote-tag">Tu voto</span>{% endif %}</span>
+              <span class="result-list__figure">{{ opcion.num_votos }} voto{{ opcion.num_votos|pluralize }} ({{ opcion.porcentaje|floatformat:1 }} %)</span>
+            </div>
+            {# stringformat deja el punto decimal que entiende el CSS (floatformat pondría coma) #}
+            <div class="result-bar{% if opcion.lider %} result-bar--leading{% endif %}" role="img" aria-label="{{ opcion.nombre }}: {{ opcion.porcentaje|floatformat:1 }} % de los votos">
+              <div class="result-bar__fill" style="--value: {{ opcion.porcentaje|stringformat:'.1f' }}"></div>
+            </div>
+          </li>
+        {% empty %}
+          <li><p class="field__hint">Esta votación no tiene opciones.</p></li>
+        {% endfor %}
+      </ol>
+      <p class="field__hint">{{ conteo.total }} voto{{ conteo.total|pluralize }} válido{{ conteo.total|pluralize }} en total. Cada persona vota una sola vez por categoría.</p>
+
+    {% elif votacion.estado == 'proxima' %}
+      <div class="notice">La votación todavía no abre, por eso no hay resultados.</div>
+    {% elif votacion.resultados == 'ocultos' %}
+      <div class="notice">Los resultados de esta votación los conoce solo la organización del Festival.</div>
+    {% else %}
+      <div class="notice">Los resultados se publican al cierre: {{ votacion.fecha_cierre|date:"j \d\e F \d\e Y, g:i a"|lower }}.</div>
+    {% endif %}
+  </section>
+
+  <div class="form-actions">
+    <a class="button button--outline" href="{% url 'elecciones:detalle_votacion' votacion.pk %}">Volver a la votación</a>
+    <a class="button button--outline" href="{% url 'elecciones:lista_resultados' %}">Ver todos los resultados</a>
+  </div>
+</div>
+{% endblock %}
