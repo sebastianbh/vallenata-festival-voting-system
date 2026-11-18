@@ -2,6 +2,8 @@
 
 from django.contrib import admin
 from django.db.models import Count
+from django.urls import reverse
+from django.utils.html import format_html
 
 from .models import Categoria, Edicion, Opcion, Votacion, Voto
 
@@ -23,8 +25,17 @@ class OpcionInline(admin.TabularInline):
     """Permite agregar las opciones desde la misma pantalla de la votación."""
 
     model = Opcion
-    fields = ['orden', 'nombre', 'descripcion', 'imagen']
+    fields = ['orden', 'nombre', 'descripcion', 'imagen', 'votos_recibidos']
+    readonly_fields = ['votos_recibidos']
     extra = 2
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).annotate(num_votos=Count('votos'))
+
+    @admin.display(description='votos')
+    def votos_recibidos(self, obj):
+        # Las filas nuevas (todavía sin guardar) no tienen votos
+        return getattr(obj, 'num_votos', 0)
 
 
 @admin.register(Edicion)
@@ -53,12 +64,28 @@ class CategoriaAdmin(admin.ModelAdmin):
 
 @admin.register(Votacion)
 class VotacionAdmin(admin.ModelAdmin):
-    list_display = ['titulo', 'categoria', 'edicion', 'fecha_apertura', 'fecha_cierre', 'estado', 'publicada']
-    list_filter = ['publicada', 'categoria__edicion', 'categoria']
+    list_display = ['titulo', 'categoria', 'edicion', 'fecha_apertura', 'fecha_cierre', 'estado', 'publicada', 'resultados', 'total_votos']
+    list_filter = ['publicada', 'resultados', 'categoria__edicion', 'categoria']
     search_fields = ['titulo', 'descripcion']
     # Sin date_hierarchy: necesita las tablas de zonas horarias de MySQL, que XAMPP no trae instaladas
     list_select_related = ['categoria__edicion']
+    readonly_fields = ['enlace_resultados']
     inlines = [OpcionInline]
+
+    def get_queryset(self, request):
+        # Cuenta los votos de todas sus opciones en la misma consulta
+        return super().get_queryset(request).annotate(num_votos=Count('opciones__votos'))
+
+    @admin.display(description='votos', ordering='num_votos')
+    def total_votos(self, obj):
+        return obj.num_votos
+
+    @admin.display(description='resultados en el sitio')
+    def enlace_resultados(self, obj):
+        if not obj.pk:
+            return 'Disponible después de guardar.'
+        url = reverse('elecciones:resultados_votacion', args=[obj.pk])
+        return format_html('<a href="{}" target="_blank" rel="noopener">Ver la página de resultados</a>', url)
 
     @admin.display(description='edición', ordering='categoria__edicion__anio')
     def edicion(self, obj):

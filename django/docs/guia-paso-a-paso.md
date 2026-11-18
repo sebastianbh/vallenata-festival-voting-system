@@ -7,6 +7,7 @@ Guía única del equipo para el **Sistema Web de Votaciones – Festival de la L
 | Dejar listo tu computador por primera vez | Parte 1 |
 | Trabajar en el día a día o traer los cambios del equipo | Parte 2 |
 | Entender cómo se construyó el proyecto | Parte 3 |
+| Ver los resultados y las mejoras para celular (entrega final) | Parte 3, Paso 11 |
 | Revisar la Entrega 3, grabar el video y llenar el PDF | Parte 4 |
 | Resolver un error | Problemas comunes |
 
@@ -619,6 +620,76 @@ except IntegrityError:
 
 `GET /api/categorias/` está en `apps/elecciones/api.py`. Consulta MySQL, arma diccionarios de Python y los devuelve con `JsonResponse`. No necesita librerías adicionales. `prefetch_related` evita hacer una consulta por cada fila: siempre son 3 consultas, sin importar cuántos datos haya.
 
+## Paso 11. Resultados y uso en celular (correcciones del profesor para la entrega final)
+
+El profesor pidió dos cosas: **consultar y presentar los resultados según las reglas del cliente**, y **mejorar la navegación y la visualización en celular**.
+
+**Quien descarga estos cambios debe ejecutar**, dentro de `django/` y con el entorno activo:
+
+```powershell
+python manage.py migrate
+python manage.py cargar_datos_prueba
+```
+
+- `migrate` aplica `0004_votacion_resultados`: agrega la columna `resultados` a `elecciones_votacion`. Las votaciones que ya existen quedan con la regla «al cierre».
+- El seeder pone la regla de cada votación y carga **19 votos de ejemplo** en las dos votaciones cerradas, para que haya resultados que mostrar. Esos votos los emiten cuentas ficticias `votante-demo-1`, `votante-demo-2`, etc., que **no tienen contraseña utilizable**: nadie puede ingresar con ellas.
+
+### Las reglas del cliente
+
+Son las mismas tres del prototipo de la Entrega 1. Cada votación tiene la suya, y la organización la elige en el admin (campo **Resultados visibles**):
+
+| Regla | El público ve el conteo… | Ejemplo en los datos de prueba |
+|---|---|---|
+| Al cierre de la votación (por defecto) | Solo cuando la votación cerró | *Presentación más recordada* (cerrada, gana B) y *Canción favorita 2026* (cerrada, empate) |
+| En vivo | Desde que abre, como resultado parcial | *Canción favorita del público*: sirve para mostrar en vivo cómo sube el conteo al votar |
+| Solo la organización | Nunca. Solo el personal del admin | *Vestuario más destacado* |
+
+Los usuarios con `is_staff` (la organización) ven siempre todos los resultados, con un aviso cuando el público todavía no puede verlos. Una votación próxima no tiene resultados para nadie del público.
+
+### Dónde está en el código
+
+| Archivo | Qué hace |
+|---|---|
+| `models.py` → `Votacion.resultados` | El campo con la regla (`choices`) |
+| `models.py` → `resultados_visibles_para(usuario)` y `resultados_publicos()` | Aplican la regla para una persona |
+| `models.py` → `con_resultados_publicos(queryset)` | La misma regla, pero como filtro en MySQL para la lista |
+| `models.py` → `conteo()` | Cuenta los votos de cada opción con `Count('votos')`: MySQL hace un solo `SELECT ... GROUP BY`. Calcula porcentajes, quién va ganando y si hay empate |
+| `views.py` → `lista_resultados` y `resultados_votacion` | Las dos páginas nuevas: `/resultados/` y `/votaciones/<id>/resultados/` |
+| `templates/elecciones/resultados.html` y `votacion_resultados.html` | Las barras de resultados, con las clases CSS que ya traía el prototipo |
+| `admin.py` | Columna **votos** y filtro por regla en la lista de votaciones; votos de cada opción y enlace a la página de resultados dentro de la votación |
+
+Si la regla no deja ver los resultados, la vista ni siquiera cuenta los votos: el conteo solo se consulta cuando se va a mostrar.
+
+Un detalle técnico que vale la pena saber: la lista cuenta opciones y votos en la misma consulta. Sin `distinct=True`, el JOIN repetiría filas y los números saldrían inflados (por ejemplo, 3 opciones × 9 votos = 27). Hay una prueba para eso.
+
+### Mejoras para celular
+
+| Antes | Ahora |
+|---|---|
+| El menú de tres rayas solo se cerraba con el mismo botón | También se cierra al tocar fuera de él o al elegir un enlace (`static/js/menu.js`) |
+| En una votación, el aviso de estado y el botón **Ingresar para votar** quedaban al final, después de todas las opciones | Salen arriba, antes de las opciones. En computador siguen en la columna derecha (`grid-template-areas` en `pages.css`) |
+| Con muchas opciones, había que bajar hasta el final para encontrar **Continuar a la confirmación** | El botón queda fijo abajo de la pantalla mientras se recorren las opciones (`position: sticky`) |
+| Botones de las listas angostos | En celular ocupan todo el ancho: más fáciles de tocar |
+| Sin acceso a resultados | **Resultados** en el menú, en el pie de página, en cada votación y en **Mis votos** |
+
+Las páginas se revisaron a 390 px de ancho (el tamaño de un celular común) sin desbordes horizontales. Para probarlo tú: en Chrome, **F12** → ícono de celular (*Toggle device toolbar*) → elige *iPhone 12 Pro* o similar.
+
+Como cambiaron el CSS y el JS, en `base.html` el `?v=2` pasó a `?v=3`. Así el navegador descarga los archivos nuevos en vez de usar los guardados.
+
+### Cómo revisarlo
+
+| # | Qué revisar | Dónde | Debe pasar |
+|---|---|---|---|
+| 1 | Lista de resultados | Menú **Resultados** | Sin sesión: *Canción favorita del público* (en vivo), *Presentación más recordada* y *Canción favorita 2026*. No aparecen las abiertas «al cierre» ni la «solo organización» |
+| 2 | Resultado de una cerrada | *Presentación más recordada* | «Ganó Presentación B», barras con 5, 3 y 1 votos, y 9 votos en total |
+| 3 | Empate | *Canción favorita del público 2026* | «Empate entre Canción E y Canción F» |
+| 4 | En vivo | Vota en *Canción favorita del público* y abre sus resultados | «Resultados parciales», tu opción marcada con **Tu voto** |
+| 5 | Al cierre, todavía abierta | `/votaciones/<id>/resultados/` de *Agrupación favorita* | «Los resultados se publican al cierre: …» |
+| 6 | Solo organización | *Vestuario más destacado* sin sesión y luego con el superusuario | Primero «los conoce solo la organización»; con el superusuario, el conteo y el aviso «Lo ves porque eres de la organización» |
+| 7 | Admin | `/admin/elecciones/votacion/` | Columnas **resultados** y **votos**; dentro de una votación, los votos de cada opción |
+| 8 | Celular | F12 → modo celular | Menú se cierra al tocar fuera; en una votación abierta, el botón **Continuar** queda fijo abajo |
+| 9 | Pruebas | `python manage.py test` | `Ran 53 tests` y `OK` |
+
 ## Pruebas automáticas
 
 En `apps/elecciones/tests.py` y `apps/cuentas/tests.py` hay pruebas que revisan solas que el sistema funcione. Por ejemplo: que las páginas abran, que un borrador no se vea, que el registro cree el usuario y que el inicio y el cierre de sesión funcionen.
@@ -631,7 +702,7 @@ Django crea una base de datos temporal (`test_votaciones_festival`), ejecuta las
 
 Si una ejecución anterior se interrumpió, Django avisa que la base temporal ya existe y pregunta si la borra: se responde `yes`. Es solo la base temporal, no la del proyecto.
 
-Las pruebas `test_cp01` a `test_cp10` corresponden a los casos de la Entrega 3 (ver la Parte 4). Para ver cada una por su nombre:
+Las pruebas `test_cp01` a `test_cp10` corresponden a los casos de la Entrega 3 (ver la Parte 4). Las `test_cp11_*` (clase `ResultadosTests`) revisan las reglas de resultados del Paso 11: conteo y porcentajes, «al cierre», «en vivo», «solo organización», próxima, empate y la lista. Para ver cada una por su nombre:
 
 ```powershell
 python manage.py test apps.elecciones -v 2
@@ -676,6 +747,7 @@ El **resultado obtenido**, el **estado** y el **minuto del video** los diligenci
 | CP-08 | En `/admin`, abrir **Votos** y comparar con `SELECT * FROM elecciones_voto` en phpMyAdmin | Los datos coinciden. No hay opción de agregar, cambiar ni borrar | `test_cp08_*` |
 | CP-09 | Ejecutar `python manage.py test apps.elecciones.tests.ConcurrenciaTests -v 2` y capturar la salida | Termina en `OK`: de 8 solicitudes simultáneas queda 1 voto y ninguna da error del servidor | `test_cp09_*` |
 | CP-10 | Abrir `/api/categorias/` en el navegador o en Postman | JSON válido con categorías, votaciones y opciones reales | `test_cp10_*` |
+| CP-11 (entrega final) | Abrir **Resultados** y revisar una votación de cada regla (ver el Paso 11) | Cada regla muestra u oculta el conteo como corresponde; la organización ve todo | `test_cp11_*` |
 
 ## Guion del video
 
@@ -801,6 +873,11 @@ La API solo corre en `127.0.0.1`, así que en el PDF no se presenta como enlace 
 **Cómo evitarlo:** antes de apagar el computador o cerrar XAMPP, presionar siempre **Stop** en MySQL.
 
 **Cómo se arregló en este proyecto:** las tablas dañadas eran `db`, `proxies_priv` y `columns_priv` (en `C:\xampp\mysql\data\mysql\`). Con MySQL detenido, se guardó una copia de sus archivos y se reemplazaron por las originales que XAMPP trae en `C:\xampp\mysql\backup\mysql\`. Las bases de datos de los proyectos no se tocan, porque están en otras carpetas.
+
+**Otra causa que apareció:** el archivo `C:\xampp\mysql\data\multi-master.info` (de replicación, una función que el proyecto no usa) quedó lleno de líneas del registro de errores. MySQL lo lee al arrancar, no lo entiende y se cierra.
+
+- **Para verlo:** XAMPP no muestra el error real. Desde una terminal en `C:\xampp\mysql`, ejecuta `bin\mysqld.exe --defaults-file=bin\my.ini --standalone --console`. Si dice `Failed to initialize multi master structures`, es esto. Cierra con **Ctrl + C**.
+- **Arreglo:** con MySQL detenido, mueve a una carpeta de respaldo `multi-master.info` y los archivos `master-*.info`, `relay-log-*.info` y `mysql-relay-bin-*` de `C:\xampp\mysql\data\`. No los borres. MySQL crea un `multi-master.info` vacío al arrancar.
 
 ---
 

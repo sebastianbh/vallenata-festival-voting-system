@@ -146,6 +146,7 @@ class DatosPruebaTests(TestCase):
         call_command('cargar_datos_prueba', stdout=StringIO())
         self.assertEqual(Edicion.objects.count(), 2)
         self.assertEqual(Votacion.objects.count(), 7)
+        self.assertEqual(Voto.objects.count(), 19)  # votos de ejemplo de las dos votaciones cerradas
 
 
 def crear_escenario_de_voto(prueba):
@@ -386,3 +387,81 @@ class ApiCategoriasTests(TestCase):
     def test_no_hace_una_consulta_por_cada_fila(self):
         with self.assertNumQueries(3):
             self.client.get(self.url)
+
+
+class ResultadosTests(TestCase):
+    """CP-11: consulta de resultados con las reglas del cliente (al cierre, en vivo, solo organización)."""
+
+    def setUp(self):
+        crear_escenario_de_voto(self)
+        self.otro = User.objects.create_user('votante-2', 'votante2@ejemplo.co', 'Festival-Prueba-2027')
+        self.admin = User.objects.create_superuser('admin-prueba', 'admin@ejemplo.co', 'Festival-Prueba-2027')
+        self.cerrada_b = Opcion.objects.create(votacion=self.cerrada, nombre='Cerrada B')
+        # Votos en la votación cerrada: 2 para A y 1 para B
+        tercero = User.objects.create_user('votante-3', 'votante3@ejemplo.co', 'Festival-Prueba-2027')
+        for usuario, opcion in [(self.usuario, self.cerrada_a), (self.otro, self.cerrada_a), (tercero, self.cerrada_b)]:
+            Voto.registrar(usuario, opcion)
+
+    def url(self, votacion):
+        return reverse('elecciones:resultados_votacion', args=[votacion.pk])
+
+    def test_cp11_conteo_y_porcentajes(self):
+        conteo = self.cerrada.conteo()
+        self.assertEqual(conteo['total'], 3)
+        self.assertEqual([(o.nombre, o.num_votos, o.porcentaje) for o in conteo['opciones']],
+                         [('Cerrada A', 2, 66.7), ('Cerrada B', 1, 33.3)])
+        self.assertEqual(conteo['lideres'], [self.cerrada_a])
+        self.assertFalse(conteo['empate'])
+
+    def test_cp11_al_cierre_se_ven_cuando_la_votacion_cierra(self):
+        respuesta = self.client.get(self.url(self.cerrada))
+        self.assertContains(respuesta, 'Ganó <strong>Cerrada A</strong>')
+        self.assertContains(respuesta, '2 votos (66,7 %)')
+
+    def test_cp11_al_cierre_no_se_ven_mientras_esta_abierta(self):
+        Voto.registrar(self.usuario, self.cancion_a)
+        respuesta = self.client.get(self.url(self.cancion))
+        self.assertContains(respuesta, 'Los resultados se publican al cierre')
+        self.assertNotContains(respuesta, 'result-list__row')
+
+    def test_cp11_en_vivo_se_ven_con_la_votacion_abierta(self):
+        Votacion.objects.filter(pk=self.cancion.pk).update(resultados=Votacion.RESULTADOS_EN_VIVO)
+        Voto.registrar(self.usuario, self.cancion_a)
+        respuesta = self.client.get(self.url(self.cancion))
+        self.assertContains(respuesta, 'Resultados parciales')
+        self.assertContains(respuesta, 'Va adelante <strong>Canción A</strong>')
+
+    def test_cp11_ocultos_solo_los_ve_la_organizacion(self):
+        Votacion.objects.filter(pk=self.cerrada.pk).update(resultados=Votacion.RESULTADOS_OCULTOS)
+        self.assertContains(self.client.get(self.url(self.cerrada)), 'los conoce solo la organización')
+        self.client.force_login(self.admin)
+        respuesta = self.client.get(self.url(self.cerrada))
+        self.assertContains(respuesta, 'Lo ves porque eres de la organización')
+        self.assertContains(respuesta, '2 votos (66,7 %)')
+
+    def test_cp11_proxima_no_tiene_resultados(self):
+        self.assertContains(self.client.get(self.url(self.proxima)), 'todavía no abre')
+
+    def test_cp11_empate(self):
+        Voto.registrar(User.objects.create_user('votante-4'), self.cerrada_b)
+        respuesta = self.client.get(self.url(self.cerrada))
+        self.assertContains(respuesta, 'Empate entre <strong>Cerrada A</strong> y <strong>Cerrada B</strong>')
+
+    def test_cp11_lista_de_resultados_aplica_las_reglas(self):
+        respuesta = self.client.get(reverse('elecciones:lista_resultados'))
+        self.assertContains(respuesta, 'Votación cerrada')
+        self.assertNotContains(respuesta, 'Canción favorita')  # abierta y con regla "al cierre"
+        self.assertNotContains(respuesta, 'Votación próxima')
+        # La organización ve también las abiertas
+        self.client.force_login(self.admin)
+        self.assertContains(self.client.get(reverse('elecciones:lista_resultados')), 'Canción favorita')
+
+    def test_cp11_borrador_no_tiene_pagina_de_resultados(self):
+        borrador = crear_votacion(self.musica, 'Borrador', -5, -1, publicada=False)
+        self.assertEqual(self.client.get(self.url(borrador)).status_code, 404)
+
+    def test_cp11_conteos_de_la_lista_no_se_inflan(self):
+        # Con dos Count en la misma consulta, sin distinct=True el JOIN multiplicaría los números
+        from .views import votaciones_visibles
+        votacion = votaciones_visibles().get(pk=self.cerrada.pk)
+        self.assertEqual((votacion.num_opciones, votacion.num_votos), (2, 3))

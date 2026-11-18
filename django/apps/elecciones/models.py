@@ -83,12 +83,26 @@ class Votacion(models.Model):
     ABIERTA = 'abierta'
     CERRADA = 'cerrada'
 
+    # Reglas del cliente para mostrar los resultados (las mismas del prototipo de la Entrega 1)
+    RESULTADOS_AL_CIERRE = 'al_cierre'
+    RESULTADOS_EN_VIVO = 'en_vivo'
+    RESULTADOS_OCULTOS = 'ocultos'
+    REGLAS_RESULTADOS = [
+        (RESULTADOS_AL_CIERRE, 'Al cierre de la votación'),
+        (RESULTADOS_EN_VIVO, 'En vivo, mientras está abierta'),
+        (RESULTADOS_OCULTOS, 'Solo la organización'),
+    ]
+
     categoria = models.ForeignKey(Categoria, on_delete=models.PROTECT, related_name='votaciones', verbose_name='categoría')
     titulo = models.CharField('título', max_length=200)
     descripcion = models.TextField('descripción', blank=True)
     fecha_apertura = models.DateTimeField('fecha de apertura')
     fecha_cierre = models.DateTimeField('fecha de cierre')
     publicada = models.BooleanField(default=False, help_text='Mientras no esté publicada, solo se ve en el panel de administración.')
+    resultados = models.CharField(
+        'resultados visibles', max_length=10, choices=REGLAS_RESULTADOS, default=RESULTADOS_AL_CIERRE,
+        help_text='Cuándo puede ver el público el conteo de votos. La organización siempre lo ve.',
+    )
 
     class Meta:
         verbose_name = 'votación'
@@ -115,6 +129,40 @@ class Votacion(models.Model):
     def get_estado_display(self):
         """Texto del estado para mostrar en pantalla."""
         return {self.PROXIMA: 'Próxima', self.ABIERTA: 'Abierta', self.CERRADA: 'Cerrada'}[self.estado]
+
+    def resultados_visibles_para(self, usuario):
+        """¿Esta persona puede ver el conteo ahora? La organización siempre; el público según la regla."""
+        return usuario.is_staff or self.resultados_publicos()
+
+    def resultados_publicos(self):
+        """Aplica la regla del cliente para el público en general."""
+        if self.resultados == self.RESULTADOS_EN_VIVO:
+            return self.estado != self.PROXIMA
+        if self.resultados == self.RESULTADOS_AL_CIERRE:
+            return self.estado == self.CERRADA
+        return False  # RESULTADOS_OCULTOS
+
+    @classmethod
+    def con_resultados_publicos(cls, queryset):
+        """Filtra en MySQL las votaciones cuyo conteo ya puede ver el público (la misma regla de arriba)."""
+        ahora = timezone.now()
+        en_vivo = models.Q(resultados=cls.RESULTADOS_EN_VIVO, fecha_apertura__lte=ahora)
+        al_cierre = models.Q(resultados=cls.RESULTADOS_AL_CIERRE, fecha_cierre__lte=ahora)
+        return queryset.filter(en_vivo | al_cierre)
+
+    def conteo(self):
+        """
+        Resultados: cada opción con sus votos y porcentaje, de la más votada a la menos.
+        MySQL hace el conteo con un solo SELECT ... GROUP BY (Count).
+        """
+        opciones = list(self.opciones.annotate(num_votos=models.Count('votos')).order_by('-num_votos', 'orden', 'nombre'))
+        total = sum(opcion.num_votos for opcion in opciones)
+        maximo = opciones[0].num_votos if opciones else 0
+        for opcion in opciones:
+            opcion.porcentaje = round(opcion.num_votos * 100 / total, 1) if total else 0
+            opcion.lider = maximo > 0 and opcion.num_votos == maximo
+        lideres = [opcion for opcion in opciones if opcion.lider]
+        return {'opciones': opciones, 'total': total, 'lideres': lideres, 'empate': len(lideres) > 1}
 
 
 class Opcion(models.Model):

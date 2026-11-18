@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block titulo %}Resultados{% endblock %}
+
+{% block banner %}
+<section class="page-banner on-stage" aria-labelledby="page-title">
+  <div class="container">
+    <h1 class="page-banner__title" id="page-title">Resultados</h1>
+    <p class="page-banner__lead">Conteo de votos de cada votación. Se publican según la regla que fijó la organización: al cierre o en vivo.</p>
+  </div>
+</section>
+{% endblock %}
+
+{% block migas %}{% include 'parciales/_migas.html' %}{% endblock %}
+
+{% block contenido %}
+<div class="container section">
+  {# regroup agrupa la lista (ya ordenada por edición) para poner un título por edición #}
+  {% regroup votaciones by categoria.edicion as por_edicion %}
+  {% for grupo in por_edicion %}
+    <section class="stack results-group" aria-labelledby="edicion-{{ grupo.grouper.pk }}">
+      <h2 id="edicion-{{ grupo.grouper.pk }}">{{ grupo.grouper.numero }}.ª edición ({{ grupo.grouper.anio }})</h2>
+      <ul class="row-list">
+        {% for votacion in grupo.list %}
+          <li class="row-list__item">
+            <div class="stack stack--tight">
+              <h3 class="row-list__title"><a href="{% url 'elecciones:resultados_votacion' votacion.pk %}">{{ votacion.titulo }}</a></h3>
+              <div class="row-list__meta">
+                {% include 'parciales/_estado.html' %}
+                <span class="meta-item">{{ votacion.categoria.nombre }}</span>
+                <span class="meta-item">{{ votacion.num_votos }} voto{{ votacion.num_votos|pluralize }}</span>
+                {% if not votacion.resultados_publicos %}<span class="meta-item">Solo organización</span>{% endif %}
+              </div>
+            </div>
+            <a class="button button--outline row-list__action" href="{% url 'elecciones:resultados_votacion' votacion.pk %}">
+              Ver resultados<span class="visually-hidden">: {{ votacion.titulo }}</span>
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% empty %}
+    <div class="empty-state">
+      <h2>Todavía no hay resultados publicados</h2>
+      <p>Los resultados aparecen aquí cuando cierra cada votación (o desde que abre, si la organización los dejó en vivo).</p>
+      <a class="button button--outline" href="{% url 'elecciones:inicio' %}">Ver votaciones abiertas</a>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

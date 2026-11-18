@@ -19,9 +19,38 @@
 {% block migas %}{% include 'parciales/_migas.html' %}{% endblock %}
 
 {% block contenido %}
+{# Tres bloques: en celular van uno debajo del otro (acción, opciones, detalles); en pantallas grandes la acción y los detalles pasan a la columna derecha. #}
 <div class="container poll-layout poll-layout--split">
+  <div class="poll-action stack">
+    {% if voto %}
+      <div class="notice notice--success">
+        Ya votaste en esta categoría por <strong>{{ voto.opcion.nombre }}</strong> ({{ voto.opcion.votacion.titulo }}).
+        Solo se permite un voto por categoría y edición.
+      </div>
+      <a class="button button--outline button--block" href="{% url 'elecciones:mis_votos' %}">Ver mis votos</a>
+    {% elif votacion.estado == 'abierta' %}
+      {% if not user.is_authenticated %}
+        <div class="notice">Para votar necesitas ingresar con tu cuenta.</div>
+        <div class="button-pair">
+          <a class="button" href="{% url 'cuentas:ingresar' %}?next={{ request.path|urlencode }}">Ingresar para votar</a>
+          <a class="button button--outline" href="{% url 'cuentas:registro' %}">Crear cuenta</a>
+        </div>
+      {% else %}
+        <div class="notice">Elige una opción y confírmala. Solo puedes votar una vez en la categoría {{ votacion.categoria.nombre }}.</div>
+      {% endif %}
+    {% elif votacion.estado == 'proxima' %}
+      <div class="notice notice--warning">{% include 'parciales/_ventana.html' %}</div>
+    {% else %}
+      <div class="notice">Esta votación ya cerró y no recibe más votos.</div>
+    {% endif %}
+
+    {% if ver_resultados %}
+      <a class="button {% if votacion.estado != 'cerrada' %}button--outline {% endif %}button--block" href="{% url 'elecciones:resultados_votacion' votacion.pk %}">Ver resultados</a>
+    {% endif %}
+  </div>
+
   {% if puede_votar and opciones %}
-    <form class="stack" method="post" action="{% url 'elecciones:votar' votacion.pk %}">
+    <form class="poll-main poll-form stack" method="post" action="{% url 'elecciones:votar' votacion.pk %}">
       {% csrf_token %}
       <fieldset class="stack">
         <legend class="legend-title">Elige una opción</legend>
@@ -43,10 +72,13 @@
           {% endfor %}
         </div>
       </fieldset>
-      <button class="button" type="submit">Continuar a la confirmación</button>
+      {# En celular este botón queda fijo abajo mientras se recorren las opciones (CSS: .poll-form__submit) #}
+      <div class="poll-form__submit">
+        <button class="button button--block" type="submit">Continuar a la confirmación</button>
+      </div>
     </form>
   {% else %}
-    <section class="stack" aria-labelledby="options-title">
+    <section class="poll-main stack" aria-labelledby="options-title">
       <h2 id="options-title">Opciones ({{ opciones|length }})</h2>
       <ul class="row-list">
         {% for opcion in opciones %}
@@ -68,37 +100,17 @@
     </section>
   {% endif %}
 
-  <aside class="stack stack--roomy" aria-label="Votar y reglas">
-    {% if voto %}
-      <div class="notice notice--success">
-        Ya votaste en esta categoría por <strong>{{ voto.opcion.nombre }}</strong> ({{ voto.opcion.votacion.titulo }}).
-        Solo se permite un voto por categoría y edición.
-      </div>
-      <a class="button button--outline button--block" href="{% url 'elecciones:mis_votos' %}">Ver mis votos</a>
-    {% elif votacion.estado == 'abierta' %}
-      {% if not user.is_authenticated %}
-        <div class="stack">
-          <a class="button button--block" href="{% url 'cuentas:ingresar' %}?next={{ request.path|urlencode }}">Ingresar para votar</a>
-          <a class="button button--outline button--block" href="{% url 'cuentas:registro' %}">Crear cuenta</a>
-        </div>
-      {% endif %}
-    {% elif votacion.estado == 'proxima' %}
-      <button class="button button--block" type="button" disabled>{% include 'parciales/_ventana.html' %}</button>
-    {% else %}
-      <div class="notice">Esta votación ya cerró y no recibe más votos.</div>
-    {% endif %}
-
-    <section class="stack" aria-labelledby="rules-title">
-      <h2 id="rules-title">Detalles</h2>
-      <dl class="rule-list">
-        <div class="rule-list__item"><dt>Edición</dt><dd>{{ votacion.categoria.edicion.numero }}.ª ({{ votacion.categoria.edicion.anio }})</dd></div>
-        <div class="rule-list__item"><dt>Categoría</dt><dd>{{ votacion.categoria.nombre }}</dd></div>
-        <div class="rule-list__item"><dt>Apertura</dt><dd>{{ votacion.fecha_apertura|date:"j \d\e F \d\e Y, g:i a"|lower }}</dd></div>
-        <div class="rule-list__item"><dt>Cierre</dt><dd>{{ votacion.fecha_cierre|date:"j \d\e F \d\e Y, g:i a"|lower }}</dd></div>
-        <div class="rule-list__item"><dt>Identificación</dt><dd>Con cuenta</dd></div>
-        <div class="rule-list__item"><dt>Votos permitidos</dt><dd>Uno por categoría</dd></div>
-      </dl>
-    </section>
-  </aside>
+  <section class="poll-details stack" aria-labelledby="rules-title">
+    <h2 id="rules-title">Detalles</h2>
+    <dl class="rule-list">
+      <div class="rule-list__item"><dt>Edición</dt><dd>{{ votacion.categoria.edicion.numero }}.ª ({{ votacion.categoria.edicion.anio }})</dd></div>
+      <div class="rule-list__item"><dt>Categoría</dt><dd>{{ votacion.categoria.nombre }}</dd></div>
+      <div class="rule-list__item"><dt>Apertura</dt><dd>{{ votacion.fecha_apertura|date:"j \d\e F \d\e Y, g:i a"|lower }}</dd></div>
+      <div class="rule-list__item"><dt>Cierre</dt><dd>{{ votacion.fecha_cierre|date:"j \d\e F \d\e Y, g:i a"|lower }}</dd></div>
+      <div class="rule-list__item"><dt>Identificación</dt><dd>Con cuenta</dd></div>
+      <div class="rule-list__item"><dt>Votos permitidos</dt><dd>Uno por categoría</dd></div>
+      <div class="rule-list__item"><dt>Resultados</dt><dd>{{ votacion.get_resultados_display }}</dd></div>
+    </dl>
+  </section>
 </div>
 {% endblock %}

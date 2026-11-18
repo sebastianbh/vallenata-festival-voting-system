@@ -27,6 +27,9 @@
             <span class="meta-item">{{ voto.fecha|date:"j \d\e F \d\e Y, g:i a"|lower }}</span>
           </div>
         </div>
+        <a class="button button--outline row-list__action" href="{% url 'elecciones:resultados_votacion' voto.opcion.votacion.pk %}">
+          Ver resultados<span class="visually-hidden">: {{ voto.opcion.votacion.titulo }}</span>
+        </a>
       </li>
     {% empty %}
       <li class="stack">

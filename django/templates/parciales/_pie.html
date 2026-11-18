@@ -2,7 +2,7 @@
   <div class="container site-footer__grid">
     <div>
       <h2 class="site-footer__heading">Votaciones del Festival</h2>
-      <p>Entrega 3 de Desarrollo Web, Fundación Universitaria del Área Andina. Desarrollado con Python, Django y MySQL.</p>
+      <p>Entrega final de Desarrollo Web, Fundación Universitaria del Área Andina. Desarrollado con Python, Django y MySQL.</p>
       <p><a href="https://festivalvallenato.com" rel="noopener">Ir al sitio oficial del Festival</a></p>
     </div>
     <nav aria-label="Secundaria">
@@ -10,6 +10,7 @@
       <ul class="site-footer__links">
         <li><a href="{% url 'elecciones:inicio' %}">Inicio</a></li>
         <li><a href="{% url 'elecciones:lista_ediciones' %}">Ediciones</a></li>
+        <li><a href="{% url 'elecciones:lista_resultados' %}">Resultados</a></li>
       </ul>
     </nav>
     <div>
